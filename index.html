@@ -3,25 +3,144 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SRCD Web Map</title>
+    <title>SRCD Raster Reveal Map</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css" rel="stylesheet" />
     <style>
       body { margin: 0; padding: 0; }
       #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+      canvas.reveal-mask {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
     <div id="map"></div>
-
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.js"></script>
     <script>
       mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
+
       const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/snbenoi/cmhjgr9hh000001rcf6cy38p0',
-        center: [-122.5125, 37.9679],
-        zoom: 15
+        center: [-122.5078, 37.9694],
+        zoom: 13
+      });
+
+      map.on('load', () => {
+
+        // Coordinates for both rasters
+        const corners = [
+          [-122.537464, 37.984078], // top left
+          [-122.477353, 37.984108], // top right
+          [-122.477370, 37.952203], // bottom right
+          [-122.537475, 37.952208]  // bottom left
+        ];
+
+        // Add UNDER raster first (bottom layer)
+        map.addSource('under-image', {
+          type: 'image',
+          url: 'https://riyahniko.com/wp-content/uploads/2025/11/00_01_UNDER3_Artboard-1-taploid-2048x1325.jpg',
+          coordinates: corners
+        });
+
+        map.addLayer({
+          id: 'under-image-layer',
+          type: 'raster',
+          source: 'under-image',
+          paint: {
+            'raster-opacity': 1,
+            'raster-fade-duration': 0
+          }
+        });
+
+        // Add SURFACE raster on top
+        map.addSource('surface-image', {
+          type: 'image',
+          url: 'https://riyahniko.com/wp-content/uploads/2025/11/00_01_SURFACE3_Artboard-1-taploid-2048x1325.jpg',
+          coordinates: corners
+        });
+
+        map.addLayer({
+          id: 'surface-image-layer',
+          type: 'raster',
+          source: 'surface-image',
+          paint: {
+            'raster-opacity': 1,
+            'raster-fade-duration': 0
+          }
+        });
+
+        // Add a canvas overlay for the circular reveal
+        const canvas = document.createElement('canvas');
+        canvas.className = 'reveal-mask';
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+          canvas.width = map.getCanvas().width;
+          canvas.height = map.getCanvas().height;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        map.on('resize', resizeCanvas);
+
+        let mouseX = 0;
+        let mouseY = 0;
+        let hovering = false;
+        let revealProgress = 0; // 0 to 1
+
+        map.getCanvasContainer().addEventListener('mousemove', (e) => {
+          const rect = map.getCanvas().getBoundingClientRect();
+          mouseX = e.clientX - rect.left;
+          mouseY = e.clientY - rect.top;
+        });
+
+        map.getCanvasContainer().addEventListener('mouseenter', () => {
+          hovering = true;
+        });
+
+        map.getCanvasContainer().addEventListener('mouseleave', () => {
+          hovering = false;
+          revealProgress = 0;
+        });
+
+        // Draw animation loop
+        function animate() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          if (hovering) {
+            revealProgress = Math.min(1, revealProgress + 0.02); // ~2 sec to full reveal
+          } else {
+            revealProgress = Math.max(0, revealProgress - 0.05);
+          }
+
+          if (revealProgress > 0) {
+            const maxRadius = Math.min(canvas.width, canvas.height) / 3;
+            const radius = revealProgress * maxRadius;
+
+            // Mask logic: cut out a circular hole
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Overlay semi-transparent black layer (simulating top opacity)
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+
+          requestAnimationFrame(animate);
+        }
+
+        animate();
       });
     </script>
   </body>
 </html>
+
