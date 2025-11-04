@@ -1,18 +1,98 @@
-html, body {
-  margin: 0;
-  height: 100%;
-}
-#map {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 100%;
-}
-.mapboxgl-popup {
-  max-width: 300px;
-  font-family: Arial, sans-serif;
-}
-.mapboxgl-popup img {
-  width: 100%;
-  border-radius: 4px;
-}
+mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
+
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/snbenoi/cmhjgr9hh000001rcf6cy38p0',
+  center: [-122.5125, 37.9679],
+  zoom: 13
+});
+
+map.on('load', () => {
+  // Step 1: Define your GeoJSON data
+  const landmarks = {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "title": "Floating Housing",
+          "address": "555 Francisco Blvd E, San Rafael, CA 94901",
+          "proposal": "Teiger Island precedent floating homes to replace liveaboard homes in the harbor",
+          "image": "https://riyahniko.com/wp-content/uploads/2025/11/Screenshot-2025-11-03-at-9.43.05-AM.png"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-122.5036, 37.9720] // approximate coordinates
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "title": "Municipally Leased Storage",
+          "address": "616 Canal St, San Rafael, CA 94901",
+          "proposal": "San Rafael can lease space in this storage facility for emergency supplies.",
+          "image": "https://riyahniko.com/wp-content/uploads/2025/11/Screenshot-2025-11-03-at-9.42.42-AM.png"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-122.5078, 37.9694]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "title": "Solar Powered Pump Station",
+          "address": "555 Francisco Blvd W, San Rafael, CA 94901",
+          "proposal": "Vegetated and riprap forebay with solar pumping capacity.",
+          "image": "https://riyahniko.com/wp-content/uploads/2025/11/fisheye-after-2048x1536.jpeg"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-122.5115, 37.9675]
+        }
+      }
+    ]
+  };
+
+  // Step 2: Add the GeoJSON as a source
+  map.addSource('landmarks', {
+    type: 'geojson',
+    data: landmarks
+  });
+
+  // Step 3: Add a layer for the points
+  map.addLayer({
+    id: 'landmarks-layer',
+    type: 'circle',
+    source: 'landmarks',
+    paint: {
+      'circle-radius': 8,
+      'circle-color': '#FF5733',
+      'circle-stroke-width': 2,
+      'circle-stroke-color': '#fff'
+    }
+  });
+
+  // Step 4: Add popups on click
+  map.on('click', 'landmarks-layer', (e) => {
+    const feature = e.features[0];
+    const props = feature.properties;
+
+    // Popup content — you can customize this
+    const html = `
+      <h3>${props.title}</h3>
+      <p><strong>Address:</strong> ${props.address}</p>
+      <p>${props.proposal}</p>
+      <img src="${props.image}" alt="${props.title}">
+    `;
+
+    new mapboxgl.Popup()
+      .setLngLat(feature.geometry.coordinates)
+      .setHTML(html)
+      .addTo(map);
+  });
+
+  // Change cursor to pointer when hovering
+  map.on('mouseenter', 'landmarks-layer', () => map.getCanvas().style.cursor = 'pointer');
+  map.on('mouseleave', 'landmarks-layer', () => map.getCanvas().style.cursor = '');
+});
