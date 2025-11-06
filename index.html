@@ -6,12 +6,34 @@
   <title>SRCD Raster Reveal Map</title>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css" rel="stylesheet" />
   <style>
-    body { margin: 0; padding: 0; }
-    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .mapboxgl-popup {
+      max-width: 300px;
+      font-family: Arial, sans-serif;
+    }
+
+    .mapboxgl-popup img {
+      width: 100%;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.js"></script>
   <script>
     mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
@@ -24,6 +46,7 @@
     });
 
     map.on('load', () => {
+      // --- Raster Image Corners ---
       const corners = [
         [-122.537464, 37.984078], // top left
         [-122.477353, 37.984108], // top right
@@ -31,7 +54,7 @@
         [-122.537475, 37.952208]  // bottom left
       ];
 
-      // UNDER raster (bottom)
+      // --- UNDER (bottom) image ---
       map.addSource('under-image', {
         type: 'image',
         url: 'https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/SFCD%20underground.jpg',
@@ -45,49 +68,9 @@
         paint: { 'raster-opacity': 1 }
       });
 
-      // SURFACE raster (top)
+      // --- SURFACE (top) image ---
       map.addSource('surface-image', {
         type: 'image',
         url: 'https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/SRCD%20surface.jpg',
         coordinates: corners
-      });
-
-      map.addLayer({
-        id: 'surface-layer',
-        type: 'raster',
-        source: 'surface-image',
-        paint: { 'raster-opacity': 1 }
-      });
-
-      // Animated circle mask for fade-out effect
-      let radius = 0;
-      let hover = false;
-      let mouseLngLat = null;
-
-      map.on('mousemove', (e) => {
-        mouseLngLat = e.lngLat;
-      });
-
-      map.on('mouseenter', () => hover = true);
-      map.on('mouseleave', () => { hover = false; radius = 0; });
-
-      function animate() {
-        if (hover && radius < 300) radius += 3;  // expand circle
-        if (!hover && radius > 0) radius -= 10;  // contract when leaving
-
-        if (mouseLngLat) {
-          map.setPaintProperty('surface-layer', 'raster-opacity', [
-            'case',
-            ['<', ['distance', ['literal', [mouseLngLat.lng, mouseLngLat.lat]], ['get', 'center']], radius / 100000],
-            0.0,
-            1.0
-          ]);
-        }
-        requestAnimationFrame(animate);
-      }
-
-      animate();
-    });
-  </script>
-</body>
-</html>
+      })
