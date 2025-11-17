@@ -1,33 +1,105 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+/* ----------------------------------------------------
+   MAPBOX INITIAL SETUP
+---------------------------------------------------- */
+mapboxgl.accessToken =
+  "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+const map = new mapboxgl.Map({
+    container: "map",
+    style: "mapbox://styles/snbenoi/cmhjgr9hh000001rcf6cy38p0",
+    center: [-122.5125, 37.9679],
+    zoom: 13,
+    pitch: 60,
+    antialias: true
+});
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.querySelector("#three").appendChild(renderer.domElement);
+/* ----------------------------------------------------
+   RASTER IMAGE COORDINATES (YOUR OLD SYSTEM)
+---------------------------------------------------- */
+const corners = [
+  [-122.537464, 37.984078],
+  [-122.477353, 37.984108],
+  [-122.477370, 37.952203],
+  [-122.537475, 37.952208]
+];
 
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(10, 10, 10);
-scene.add(light);
+const underUrl = "assets/images/SFCD underground.jpg";
+const surfaceUrl = "assets/images/SRCD surface.jpg";
 
-const loader = new GLTFLoader();
-loader.load(
-    'https://sariyahbenoit-code.github.io/SRCD-Map/assets/images/forebay%20gltf.gltf',
-    (gltf) => {
-        const model = gltf.scene;
-        model.scale.set(0.00005, 0.00005, 0.00005);
-        scene.add(model);
-    },
-    undefined,
-    (error) => console.error(error)
-);
+/* ----------------------------------------------------
+   MAP LOAD EVENT
+---------------------------------------------------- */
+map.on("load", () => {
 
-camera.position.set(0, 1, 2);
+    /* ----------------------------------------------
+       UNDERGROUND RASTER LAYER
+    ---------------------------------------------- */
+    map.addSource("underground", {
+        type: "image",
+        url: underUrl,
+        coordinates: corners
+    });
 
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-}
-animate();
+    map.addLayer({
+        id: "underground-layer",
+        type: "raster",
+        source: "underground",
+        paint: { "raster-opacity": 1 }
+    });
+
+    /* ----------------------------------------------
+       LANDMARK POINTS (YOUR POPUPS)
+    ---------------------------------------------- */
+    const landmarks = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+              "type": "Feature",
+              "properties": {
+                "title": "Floating Housing",
+                "address": "555 Francisco Blvd E",
+                "proposal": "Teiger Island floating homes.",
+                "image": "https://riyahniko.com/wp-content/uploads/2025/11/Screenshot-2025-11-03-at-9.43.05-AM.png"
+              },
+              "geometry": { "type": "Point", "coordinates": [-122.5036, 37.9720] }
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "title": "Municipal Storage",
+                "address": "616 Canal St",
+                "proposal": "Emergency supply leasing.",
+                "image": "https://riyahniko.com/wp-content/uploads/2025/11/Screenshot-2025-11-03-at-9.42.42-AM.png"
+              },
+              "geometry": { "type": "Point", "coordinates": [-122.5078, 37.9694] }
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "title": "Solar Pump Station",
+                "address": "555 Francisco Blvd W",
+                "proposal": "Vegetated solar pumping forebay.",
+                "image": "https://riyahniko.com/wp-content/uploads/2025/11/fisheye-after-2048x1536.jpeg"
+              },
+              "geometry": { "type": "Point", "coordinates": [-122.5115, 37.9675] }
+            }
+        ]
+    };
+
+    map.addSource("landmarks", { type:"geojson", data:landmarks });
+
+    map.addLayer({
+        id: "landmarks-layer",
+        type: "circle",
+        source: "landmarks",
+        paint: {
+            "circle-radius": 8,
+            "circle-color": "#fff",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#000"
+        }
+    });
+
+    /* Popup click */
+    map.on("click", "landmarks-layer", (e) => {
+        const p = e.features[0].properties;
