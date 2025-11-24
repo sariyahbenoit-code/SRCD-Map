@@ -4,34 +4,14 @@
 <meta charset="utf-8">
 <title>SRCD Map with 3D Models</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.js"></script>
-
 <script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
-
-<style>
-body { margin: 0; padding: 0; }
-#map { position: absolute; top: 0; bottom: 0; width: 100%; }
-.mapboxgl-popup {
-    max-width: 260px;
-    background: white;
-    border-radius: 6px;
-    padding: 0;
-}
-.mapboxgl-popup-content {
-    padding: 12px;
-}
-#map canvas {
-    cursor: default;
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div id="map"></div>
-
-<script>
-mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
-
+<script src="script.js"></script>
+</body>
+</html>
