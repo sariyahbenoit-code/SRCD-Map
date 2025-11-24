@@ -3,7 +3,6 @@ mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrN
 const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/standard',
-    config: { basemap: { theme: 'monochrome' }},
     zoom: 12,
     center: [-122.51465, 37.96558],
     pitch: 60,
@@ -11,7 +10,7 @@ const map = new mapboxgl.Map({
 });
 
 fetch("data/619data.geojson")
-.then(response => response.json())
+.then(r => r.json())
 .then(geojson => {
     map.on("load", () => {
         map.addSource("sites", { type: "geojson", data: geojson });
@@ -35,51 +34,46 @@ fetch("data/619data.geojson")
         });
 
         map.on("click", "sites-points", e => {
-            const coords = e.features[0].geometry.coordinates.slice();
+            const coords = e.features[0].geometry.coordinates;
             const props = e.features[0].properties;
-            const content = `<h3>${props.name || "Site"}</h3><p>${props.description || ""}</p>`;
-            new mapboxgl.Popup({ closeButton: true, closeOnClick: true })
-                .setLngLat(coords)
-                .setHTML(content)
-                .addTo(map);
+            const html = `<h3>${props.name || "Site"}</h3><p>${props.description || ""}</p>`;
+            new mapboxgl.Popup().setLngLat(coords).setHTML(html).addTo(map);
         });
 
         geojson.features.forEach((feature, index) => {
-            add3DModelAtPoint(feature, index);
+            add3D(feature, index);
         });
     });
 });
 
-function add3DModelAtPoint(feature, index) {
-    const lngLat = feature.geometry.coordinates;
-    const mc = mapboxgl.MercatorCoordinate.fromLngLat(lngLat, 0);
-    const rotation = [Math.PI / 2, 0, 0];
+function add3D(feature, index) {
+    const coords = feature.geometry.coordinates;
+    const mc = mapboxgl.MercatorCoordinate.fromLngLat(coords, 0);
 
+    const rot = [Math.PI / 2, 0, 0];
     const transform = {
-        translateX: mc.x,
-        translateY: mc.y,
-        translateZ: mc.z,
-        rotateX: rotation[0],
-        rotateY: rotation[1],
-        rotateZ: rotation[2],
-        scale: mc.meterInMercatorCoordinateUnits()
+        tx: mc.x, ty: mc.y, tz: mc.z,
+        rx: rot[0], ry: rot[1], rz: rot[2],
+        s: mc.meterInMercatorCoordinateUnits()
     };
 
-    const layerID = "3d-model-" + index;
+    const id = "model-" + index;
 
-    const customLayer = {
-        id: layerID,
+    const layer = {
+        id: id,
         type: "custom",
         renderingMode: "3d",
         onAdd: function (map, gl) {
             this.camera = new THREE.Camera();
             this.scene = new THREE.Scene();
-            const light1 = new THREE.DirectionalLight(0xffffff);
-            light1.position.set(0, -70, 100).normalize();
-            this.scene.add(light1);
-            const light2 = new THREE.DirectionalLight(0xffffff);
-            light2.position.set(0, 70, 100).normalize();
-            this.scene.add(light2);
+
+            const l1 = new THREE.DirectionalLight(0xffffff);
+            l1.position.set(0, -70, 100).normalize();
+            this.scene.add(l1);
+
+            const l2 = new THREE.DirectionalLight(0xffffff);
+            l2.position.set(0, 70, 100).normalize();
+            this.scene.add(l2);
 
             const loader = new THREE.GLTFLoader();
             const modelPath = feature.properties.model || "assets/models/model" + (index + 1) + ".gltf";
@@ -88,8 +82,6 @@ function add3DModelAtPoint(feature, index) {
                 gltf.scene.scale.set(1, 1, 1);
                 this.scene.add(gltf.scene);
             });
-
-            this.map = map;
 
             this.renderer = new THREE.WebGLRenderer({
                 canvas: map.getCanvas(),
@@ -100,24 +92,21 @@ function add3DModelAtPoint(feature, index) {
             this.renderer.autoClear = false;
         },
         render: function (gl, matrix) {
-            const rotationX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0), transform.rotateX);
-            const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,1,0), transform.rotateY);
-            const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), transform.rotateZ);
+            const rx = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0), transform.rx);
+            const ry = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,1,0), transform.ry);
+            const rz = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), transform.rz);
 
             const m = new THREE.Matrix4().fromArray(matrix);
             const l = new THREE.Matrix4()
-                .makeTranslation(transform.translateX, transform.translateY, transform.translateZ)
-                .scale(new THREE.Vector3(transform.scale, -transform.scale, transform.scale))
-                .multiply(rotationX)
-                .multiply(rotationY)
-                .multiply(rotationZ);
+                .makeTranslation(transform.tx, transform.ty, transform.tz)
+                .scale(new THREE.Vector3(transform.s, -transform.s, transform.s))
+                .multiply(rx).multiply(ry).multiply(rz);
 
             this.camera.projectionMatrix = m.multiply(l);
             this.renderer.resetState();
             this.renderer.render(this.scene, this.camera);
-            map.triggerRepaint();
         }
     };
 
-    map.addLayer(customLayer);
+    map.addLayer(layer);
 }
