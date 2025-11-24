@@ -1,6 +1,3 @@
-// ------------------------------
-// MAPBOX SETUP
-// ------------------------------
 
 mapboxgl.accessToken =
   "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
@@ -15,7 +12,6 @@ const map = new mapboxgl.Map({
     antialias: true
 });
 
-// Add compass + tilt control
 map.addControl(
     new mapboxgl.NavigationControl({
         visualizePitch: true,
@@ -25,10 +21,6 @@ map.addControl(
 );
 
 map.on("load", () => {
-
-    // ------------------------------
-    // RASTER OVERLAYS
-    // ------------------------------
 
     const corners = [
         [-122.537464, 37.984078],
@@ -54,10 +46,6 @@ map.on("load", () => {
         source: "under-image",
         paint: { "raster-opacity": 1 }
     });
-
-    // ------------------------------
-    // LANDMARK POINTS
-    // ------------------------------
 
     const landmarks = {
         type: "FeatureCollection",
@@ -152,7 +140,7 @@ const MapboxExample = () => {
       style: 'mapbox://styles/mapbox/standard',
       config: { basemap: { theme: 'monochrome' }},
       zoom: 12,
-      center: [-122.51465, 37.96558],  // your required coordinates
+      center: [-122.51465, 37.96558],  
       pitch: 60,
       antialias: true
 });
@@ -259,9 +247,7 @@ const MapboxExample = () => {
         (err) => console.error("GLTF load error:", err)
     );
 });
-    // -------------------------------------------------------
-    // Load your 619data.geojson
-    // -------------------------------------------------------
+
     fetch('/data/619data.geojson')
       .then(res => res.json())
       .then(geojson => {
