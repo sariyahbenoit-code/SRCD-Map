@@ -14,6 +14,18 @@
 <style>
 body { margin: 0; padding: 0; }
 #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+.mapboxgl-popup {
+    max-width: 260px;
+    background: white;
+    border-radius: 6px;
+    padding: 0;
+}
+.mapboxgl-popup-content {
+    padding: 12px;
+}
+#map canvas {
+    cursor: default;
+}
 </style>
 </head>
 <body>
@@ -21,149 +33,5 @@ body { margin: 0; padding: 0; }
 <div id="map"></div>
 
 <script>
-// ----------------------------------------
-// 1) MAP SETUP
-// ----------------------------------------
 mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
 
-const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/standard',
-    config: { basemap: { theme: 'monochrome' }},
-    zoom: 12,
-    center: [-122.51465, 37.96558], // corrected center from your coordinates
-    pitch: 60,
-    antialias: true
-});
-
-// ----------------------------------------
-// 2) LOAD GEOJSON
-// ----------------------------------------
-fetch("data/619data.geojson")
-.then(response => response.json())
-.then(geojson => {
-
-    // Add standard markers (optional)
-    map.on("load", () => {
-        map.addSource("sites", { type: "geojson", data: geojson });
-        map.addLayer({
-            id: "sites-points",
-            type: "circle",
-            source: "sites",
-            paint: {
-                "circle-radius": 6,
-                "circle-color": "#ff5500"
-            }
-        });
-
-        // ----------------------------------------
-        // 3) LOOP THROUGH GEOJSON AND PLACE MODELS
-        // ----------------------------------------
-        geojson.features.forEach((feature, index) => {
-            add3DModelAtPoint(feature, index);
-        });
-    });
-});
-
-
-// ----------------------------------------
-// FUNCTION: Add a 3D model for each feature
-// ----------------------------------------
-function add3DModelAtPoint(feature, index) {
-
-    const lngLat = feature.geometry.coordinates;
-    const modelAltitude = 0;
-
-    // Convert point to map Mercator coordinates
-    const mc = mapboxgl.MercatorCoordinate.fromLngLat(lngLat, modelAltitude);
-
-    // Adjust rotation if needed later
-    const rotation = [Math.PI / 2, 0, 0];
-
-    // Transform needed by Mapbox custom layer
-    const transform = {
-        translateX: mc.x,
-        translateY: mc.y,
-        translateZ: mc.z,
-        rotateX: rotation[0],
-        rotateY: rotation[1],
-        rotateZ: rotation[2],
-        scale: mc.meterInMercatorCoordinateUnits()
-    };
-
-    // Create unique ID per feature
-    const layerID = "3d-model-" + index;
-
-    // ----------------------------------------
-    // CUSTOM LAYER
-    // ----------------------------------------
-    const customLayer = {
-        id: layerID,
-        type: "custom",
-        renderingMode: "3d",
-        onAdd: function (map, gl) {
-            this.camera = new THREE.Camera();
-            this.scene = new THREE.Scene();
-
-            // lighting
-            const light1 = new THREE.DirectionalLight(0xffffff);
-            light1.position.set(0, -70, 100).normalize();
-            this.scene.add(light1);
-
-            const light2 = new THREE.DirectionalLight(0xffffff);
-            light2.position.set(0, 70, 100).normalize();
-            this.scene.add(light2);
-
-            // ----------------------------------------
-            // LOAD CORRESPONDING MODEL HERE
-            // Add your 3 GLTFs when ready
-            // Example: "assets/models/model1.gltf"
-            // ----------------------------------------
-            const loader = new THREE.GLTFLoader();
-
-            loader.load(
-                "assets/models/model" + (index + 1) + ".gltf",
-                gltf => {
-                    gltf.scene.scale.set(1, 1, 1); // Change later if too large
-                    this.scene.add(gltf.scene);
-                }
-            );
-
-            this.map = map;
-
-            this.renderer = new THREE.WebGLRenderer({
-                canvas: map.getCanvas(),
-                context: gl,
-                antialias: true
-            });
-
-            this.renderer.autoClear = false;
-        },
-        render: function (gl, matrix) {
-            const rotationX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0), transform.rotateX);
-            const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,1,0), transform.rotateY);
-            const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), transform.rotateZ);
-
-            const m = new THREE.Matrix4().fromArray(matrix);
-            const l = new THREE.Matrix4()
-                .makeTranslation(transform.translateX, transform.translateY, transform.translateZ)
-                .scale(new THREE.Vector3(transform.scale, -transform.scale, transform.scale))
-                .multiply(rotationX)
-                .multiply(rotationY)
-                .multiply(rotationZ);
-
-            this.camera.projectionMatrix = m.multiply(l);
-
-            this.renderer.resetState();
-            this.renderer.render(this.scene, this.camera);
-
-            map.triggerRepaint();
-        }
-    };
-
-    map.addLayer(customLayer);
-}
-
-</script>
-</body>
-</html>
