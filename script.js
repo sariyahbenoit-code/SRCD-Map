@@ -1,3 +1,5 @@
+mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
+
 const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/standard',
@@ -75,4 +77,47 @@ function add3DModelAtPoint(feature, index) {
             const light1 = new THREE.DirectionalLight(0xffffff);
             light1.position.set(0, -70, 100).normalize();
             this.scene.add(light1);
-            const lig
+            const light2 = new THREE.DirectionalLight(0xffffff);
+            light2.position.set(0, 70, 100).normalize();
+            this.scene.add(light2);
+
+            const loader = new THREE.GLTFLoader();
+            const modelPath = feature.properties.model || "assets/models/model" + (index + 1) + ".gltf";
+
+            loader.load(modelPath, gltf => {
+                gltf.scene.scale.set(1, 1, 1);
+                this.scene.add(gltf.scene);
+            });
+
+            this.map = map;
+
+            this.renderer = new THREE.WebGLRenderer({
+                canvas: map.getCanvas(),
+                context: gl,
+                antialias: true
+            });
+
+            this.renderer.autoClear = false;
+        },
+        render: function (gl, matrix) {
+            const rotationX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0), transform.rotateX);
+            const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,1,0), transform.rotateY);
+            const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), transform.rotateZ);
+
+            const m = new THREE.Matrix4().fromArray(matrix);
+            const l = new THREE.Matrix4()
+                .makeTranslation(transform.translateX, transform.translateY, transform.translateZ)
+                .scale(new THREE.Vector3(transform.scale, -transform.scale, transform.scale))
+                .multiply(rotationX)
+                .multiply(rotationY)
+                .multiply(rotationZ);
+
+            this.camera.projectionMatrix = m.multiply(l);
+            this.renderer.resetState();
+            this.renderer.render(this.scene, this.camera);
+            map.triggerRepaint();
+        }
+    };
+
+    map.addLayer(customLayer);
+}
