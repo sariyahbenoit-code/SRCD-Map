@@ -1,112 +1,268 @@
-mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
+// ------------------------------
+// MAPBOX SETUP
+// ------------------------------
+
+mapboxgl.accessToken =
+  "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
 
 const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/standard',
-    zoom: 12,
-    center: [-122.51465, 37.96558],
+    container: "map",
+    style: "mapbox://styles/snbenoi/cmhjgr9hh000001rcf6cy38p0",
+    center: [-122.5125, 37.9679],
+    zoom: 13,
     pitch: 60,
+    bearing: 0,
     antialias: true
 });
 
-fetch("data/619data.geojson")
-.then(r => r.json())
-.then(geojson => {
-    map.on("load", () => {
-        map.addSource("sites", { type: "geojson", data: geojson });
+// Add compass + tilt control
+map.addControl(
+    new mapboxgl.NavigationControl({
+        visualizePitch: true,
+        showCompass: true
+    }),
+    "top-right"
+);
 
-        map.addLayer({
-            id: "sites-points",
-            type: "circle",
-            source: "sites",
-            paint: {
-                "circle-radius": 6,
-                "circle-color": "#ff5500"
-            }
-        });
+map.on("load", () => {
 
-        map.on("mouseenter", "sites-points", () => {
-            map.getCanvas().style.cursor = "pointer";
-        });
+    // ------------------------------
+    // RASTER OVERLAYS
+    // ------------------------------
 
-        map.on("mouseleave", "sites-points", () => {
-            map.getCanvas().style.cursor = "";
-        });
+    const corners = [
+        [-122.537464, 37.984078],
+        [-122.477353, 37.984108],
+        [-122.477370, 37.952203],
+        [-122.537475, 37.952208]
+    ];
 
-        map.on("click", "sites-points", e => {
-            const coords = e.features[0].geometry.coordinates;
-            const props = e.features[0].properties;
-            const html = `<h3>${props.name || "Site"}</h3><p>${props.description || ""}</p>`;
-            new mapboxgl.Popup().setLngLat(coords).setHTML(html).addTo(map);
-        });
+    const underUrl =
+        "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/SFCD%20underground.jpg";
+    const surfaceUrl =
+        "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/SRCD%20surface.jpg";
 
-        geojson.features.forEach((feature, index) => {
-            add3D(feature, index);
-        });
+    map.addSource("under-image", {
+        type: "image",
+        url: underUrl,
+        coordinates: corners
     });
+
+    map.addLayer({
+        id: "under-layer",
+        type: "raster",
+        source: "under-image",
+        paint: { "raster-opacity": 1 }
+    });
+
+    // ------------------------------
+    // LANDMARK POINTS
+    // ------------------------------
+
+    const landmarks = {
+        type: "FeatureCollection",
+        features: [
+            {
+                type: "Feature",
+                properties: {
+                    title: "Floating Housing",
+                    address: "555 Francisco Blvd E, San Rafael, CA 94901",
+                    proposal:
+                        "Teiger Island precedent floating homes to replace liveaboard homes in the harbor",
+                    image:
+                        "https://riyahniko.com/wp-content/uploads/2025/11/Screenshot-2025-11-03-at-9.43.05-AM.png"
+                },
+                geometry: { type: "Point", coordinates: [-122.5036, 37.972] }
+            },
+            {
+                type: "Feature",
+                properties: {
+                    title: "Municipally Leased Storage",
+                    address: "616 Canal St, San Rafael, CA 94901",
+                    proposal:
+                        "San Rafael can lease space in this storage facility for emergency supplies.",
+                    image:
+                        "https://riyahniko.com/wp-content/uploads/2025/11/Screenshot-2025-11-03-at-9.42.42-AM.png"
+                },
+                geometry: { type: "Point", coordinates: [-122.5078, 37.9694] }
+            },
+            {
+                type: "Feature",
+                properties: {
+                    title: "Solar Powered Pump Station",
+                    address: "555 Francisco Blvd W, San Rafael, CA 94901",
+                    proposal:
+                        "Vegetated and riprap forebay with solar pumping capacity.",
+                    image:
+                        "https://riyahniko.com/wp-content/uploads/2025/11/fisheye-after-2048x1536.jpeg"
+                },
+                geometry: { type: "Point", coordinates: [-122.5115, 37.9675] }
+            }
+        ]
+    };
+
+    map.addSource("landmarks", { type: "geojson", data: landmarks });
+
+    map.addLayer({
+        id: "landmarks-layer",
+        type: "circle",
+        source: "landmarks",
+        paint: {
+            "circle-radius": 8,
+            "circle-color": "#ffffff",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#000000"
+        }
+    });
+
+    map.on("click", "landmarks-layer", (e) => {
+        const f = e.features[0];
+        const p = f.properties;
+
+        const html = `
+            <h3>${p.title}</h3>
+            <p><strong>Address:</strong> ${p.address}</p>
+            <p>${p.proposal}</p>
+            <img src="${p.image}">
+        `;
+
+        new mapboxgl.Popup()
+            .setLngLat(f.geometry.coordinates)
+            .setHTML(html)
+            .addTo(map);
+    });
+
+    map.on("mouseenter", "landmarks-layer", () => {
+        map.getCanvas().style.cursor = "pointer";
+import React, { useEffect, useRef } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+const MapboxExample = () => {
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
+
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/standard',
+      config: { basemap: { theme: 'monochrome' }},
+      zoom: 12,
+      center: [-122.51465, 37.96558],  // your required coordinates
+      pitch: 60,
+      antialias: true
 });
 
-function add3D(feature, index) {
-    const coords = feature.geometry.coordinates;
-    const mc = mapboxgl.MercatorCoordinate.fromLngLat(coords, 0);
+    map.on("mouseleave", "landmarks-layer", () => {
+        map.getCanvas().style.cursor = "";
+    });
 
-    const rot = [Math.PI / 2, 0, 0];
-    const transform = {
-        tx: mc.x, ty: mc.y, tz: mc.z,
-        rx: rot[0], ry: rot[1], rz: rot[2],
-        s: mc.meterInMercatorCoordinateUnits()
-    };
+    // ------------------------------
+    // HALO REVEAL CANVAS
+    // ------------------------------
 
-    const id = "model-" + index;
+    const surfaceCanvas = document.getElementById("surfaceCanvas");
+    const ctx = surfaceCanvas.getContext("2d", { alpha: true });
 
-    const layer = {
-        id: id,
-        type: "custom",
-        renderingMode: "3d",
-        onAdd: function (map, gl) {
-            this.camera = new THREE.Camera();
-            this.scene = new THREE.Scene();
+    const surfaceImg = new Image();
+    surfaceImg.crossOrigin = "anonymous";
+    surfaceImg.src = surfaceUrl;
 
-            const l1 = new THREE.DirectionalLight(0xffffff);
-            l1.position.set(0, -70, 100).normalize();
-            this.scene.add(l1);
+    let mouse = { x: -9999, y: -9999 };
+    let haloRadius = 100;
 
-            const l2 = new THREE.DirectionalLight(0xffffff);
-            l2.position.set(0, 70, 100).normalize();
-            this.scene.add(l2);
+    function resizeCanvas() {
+        surfaceCanvas.width = map.getContainer().clientWidth;
+        surfaceCanvas.height = map.getContainer().clientHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
 
-            const loader = new THREE.GLTFLoader();
-            const modelPath = feature.properties.model || "assets/models/model" + (index + 1) + ".gltf";
+    map.getCanvasContainer().addEventListener("mousemove", (e) => {
+        const rect = surfaceCanvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
 
-            loader.load(modelPath, gltf => {
-                gltf.scene.scale.set(1, 1, 1);
-                this.scene.add(gltf.scene);
-            });
+    function getScreenCoords() {
+        const tl = map.project(corners[0]);
+        const tr = map.project(corners[1]);
+        const bl = map.project(corners[3]);
+        return { tl, tr, bl };
+    }
 
-            this.renderer = new THREE.WebGLRenderer({
-                canvas: map.getCanvas(),
-                context: gl,
-                antialias: true
-            });
+    function drawSurface() {
+        if (!surfaceImg.complete) return;
+        const w = surfaceCanvas.width;
+        const h = surfaceCanvas.height;
 
-            this.renderer.autoClear = false;
+        ctx.clearRect(0, 0, w, h);
+
+        const { tl, tr, bl } = getScreenCoords();
+        const drawW = tr.x - tl.x;
+        const drawH = bl.y - tl.y;
+
+        ctx.save();
+        ctx.translate(tl.x, tl.y);
+        ctx.drawImage(surfaceImg, 0, 0, drawW, drawH);
+
+        ctx.globalCompositeOperation = "destination-out";
+        const g = ctx.createRadialGradient(
+            mouse.x,
+            mouse.y,
+            haloRadius * 0.5,
+            mouse.x,
+            mouse.y,
+            haloRadius
+        );
+        g.addColorStop(0, "rgba(255,255,255,1)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(mouse.x, mouse.y, haloRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalCompositeOperation = "source-over";
+        ctx.restore();
+    }
+
+    function animateCanvas() {
+        drawSurface();
+        requestAnimationFrame(animateCanvas);
+    }
+    animateCanvas();
+
+    // ------------------------------
+    // THREE.JS 3D MODEL
+    // ------------------------------
+
+    // Load model using global THREE + global GLTFLoader
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+        "https://sariyahbenoit-code.github.io/SRCD-Map/assets/images/forebay%20gltf.gltf",
+        (gltf) => {
+            const model = gltf.scene;
+
+            model.scale.set(0.00005, 0.00005, 0.00005);
+
+            // Centering on your coordinates:
+            // (122.5125, 37.9679)
+            model.position.set(0, 0, 0);
+
+            console.log("3D model loaded.");
         },
-        render: function (gl, matrix) {
-            const rx = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0), transform.rx);
-            const ry = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,1,0), transform.ry);
-            const rz = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), transform.rz);
-
-            const m = new THREE.Matrix4().fromArray(matrix);
-            const l = new THREE.Matrix4()
-                .makeTranslation(transform.tx, transform.ty, transform.tz)
-                .scale(new THREE.Vector3(transform.s, -transform.s, transform.s))
-                .multiply(rx).multiply(ry).multiply(rz);
-
-            this.camera.projectionMatrix = m.multiply(l);
-            this.renderer.resetState();
-            this.renderer.render(this.scene, this.camera);
-        }
-    };
-
-    map.addLayer(layer);
-}
+        undefined,
+        (err) => console.error("GLTF load error:", err)
+    );
+});
+    // -------------------------------------------------------
+    // Load your 619data.geojson
+    // -------------------------------------------------------
+    fetch('/data/619data.geojson')
+      .then(res => res.json())
+      .then(geojson => {
+        map.on('load
