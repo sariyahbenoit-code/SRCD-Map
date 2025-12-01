@@ -31,9 +31,8 @@ const modelData = [
 let labels = [];
 
 map.on('load', async () => {
-
     const geojson = await fetch('https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/data/619data.geojson')
-        .then(res => res.json());
+        .then(r => r.json());
 
     const THREE = window.THREE;
 
@@ -41,25 +40,22 @@ map.on('load', async () => {
         id: '3d-models',
         type: 'custom',
         renderingMode: '3d',
+
         onAdd: function(map, gl) {
             this.camera = new THREE.Camera();
             this.scene = new THREE.Scene();
 
-            const light = new THREE.DirectionalLight(0xffffff, 0.8);
-            light.position.set(0, -70, 100).normalize();
-            this.scene.add(light);
+            const L1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            L1.position.set(0, -70, 100).normalize();
+            this.scene.add(L1);
 
-            const light2 = new THREE.DirectionalLight(0xffffff, 0.6);
-            light2.position.set(0, 70, 100).normalize();
-            this.scene.add(light2);
+            const L2 = new THREE.DirectionalLight(0xffffff, 0.6);
+            L2.position.set(0, 70, 100).normalize();
+            this.scene.add(L2);
 
-            this.renderer = new THREE.WebGLRenderer({
-                canvas: map.getCanvas(),
-                context: gl,
-                antialias: true
-            });
-
+            this.renderer = new THREE.WebGLRenderer({ alpha: true });
             this.renderer.autoClear = false;
+            this.renderer.setSize(map.getCanvas().width, map.getCanvas().height);
 
             this.models = [];
 
@@ -71,6 +67,7 @@ map.on('load', async () => {
 
                     const merc = mapboxgl.MercatorCoordinate.fromLngLat(m.coords, 0);
                     const scale = merc.meterInMercatorCoordinateUnits();
+
                     model.scale.set(scale * 0.05, scale * 0.05, scale * 0.05);
                     model.position.set(merc.x, merc.y, merc.z);
 
@@ -82,14 +79,15 @@ map.on('load', async () => {
                         coords: m.coords
                     });
 
-                    const labelDiv = document.createElement('div');
-                    labelDiv.className = 'model-label';
-                    labelDiv.innerText = m.label;
-                    document.body.appendChild(labelDiv);
-                    labels.push({ div: labelDiv, coords: m.coords });
+                    const div = document.createElement('div');
+                    div.className = 'model-label';
+                    div.innerText = m.label;
+                    document.body.appendChild(div);
+                    labels.push({ div, coords: m.coords });
                 });
             });
         },
+
         render: function(gl, matrix) {
             this.camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix);
             this.renderer.state.reset();
@@ -97,9 +95,9 @@ map.on('load', async () => {
             map.triggerRepaint();
 
             labels.forEach(l => {
-                const pos = map.project(l.coords);
-                l.div.style.left = pos.x + 'px';
-                l.div.style.top = pos.y + 'px';
+                const p = map.project(l.coords);
+                l.div.style.left = p.x + 'px';
+                l.div.style.top = p.y + 'px';
             });
         }
     };
@@ -111,9 +109,9 @@ map.on('load', async () => {
         let clicked = null;
 
         if (customLayer.models) {
-            customLayer.models.forEach(mObj => {
-                const dist = Math.sqrt(Math.pow(mouse[0] - mObj.coords[0], 2) + Math.pow(mouse[1] - mObj.coords[1], 2));
-                if (dist < 0.001) clicked = mObj;
+            customLayer.models.forEach(m => {
+                const d = Math.sqrt((mouse[0] - m.coords[0])**2 + (mouse[1] - m.coords[1])**2);
+                if (d < 0.001) clicked = m;
             });
         }
 
@@ -125,11 +123,7 @@ map.on('load', async () => {
                 <p>${props.proposal || 'N/A'}</p>
                 <p><strong>Coordinates:</strong> ${clicked.coords[1].toFixed(6)}, ${clicked.coords[0].toFixed(6)}</p>
             `;
-            new mapboxgl.Popup()
-                .setLngLat(clicked.coords)
-                .setHTML(html)
-                .addTo(map);
-
+            new mapboxgl.Popup().setLngLat(clicked.coords).setHTML(html).addTo(map);
             document.getElementById('feature-info').innerHTML = html;
         }
     });
