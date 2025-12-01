@@ -3,7 +3,7 @@ mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrN
 const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/standard',
-    zoom: 18,
+    zoom: 17, // zoomed out more
     center: [-122.51465, 37.96558],
     pitch: 60,
     antialias: true
@@ -11,6 +11,7 @@ const map = new mapboxgl.Map({
 
 map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true, showCompass: true }), 'top-right');
 
+// 3D model points with labels
 const modelPoints = [
     {
         coords: [-122.5115, 37.9675],
@@ -31,7 +32,7 @@ const modelPoints = [
 
 let featureData = null;
 
-// Load geojson for popup info
+// Load geojson
 fetch('data/619data.geojson')
     .then(res => res.json())
     .then(data => { featureData = data; initializeMap(); });
@@ -45,14 +46,13 @@ function initializeMap() {
             type: "circle",
             source: "landmarks",
             paint: {
-                "circle-radius": 0, 
+                "circle-radius": 0,
                 "circle-color": "#ffffff",
                 "circle-opacity": 0
             }
         });
 
         add3DModels();
-        setupPopups();
     });
 }
 
@@ -98,9 +98,6 @@ function add3DModels() {
 
         map.on('render', () => {
             if (!model) return;
-            const rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0), Math.PI / 2);
-            const m = new THREE.Matrix4().fromArray(map.transform.customProjectionMatrix || map.transform.cameraWorldMatrix);
-            camera.projectionMatrix = m.multiply(rotation);
             renderer.render(scene, camera);
 
             labels.forEach(l => {
@@ -109,16 +106,29 @@ function add3DModels() {
             });
         });
 
+        // Click event for 3D models
         renderer.domElement.addEventListener('click', e => {
-            const features = map.queryRenderedFeatures(e.point, { layers: ['landmarks-layer'] });
-            if (!features.length) return;
-            const f = features[idx];
-            if (!f) return;
-            const props = f.properties;
+            // Find the nearest feature from geojson by distance
+            if (!featureData) return;
+            let closestFeature = null;
+            let minDist = Infinity;
+            featureData.features.forEach(f => {
+                const lng = f.geometry.coordinates[0];
+                const lat = f.geometry.coordinates[1];
+                const dist = Math.sqrt(Math.pow(lat - point.coords[1], 2) + Math.pow(lng - point.coords[0], 2));
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestFeature = f;
+                }
+            });
+
+            if (!closestFeature) return;
+
+            const props = closestFeature.properties;
             const html = `
-                <h3>${props.title}</h3>
-                <p><strong>Address:</strong> ${props.address}</p>
-                <p>${props.proposal}</p>
+                <h3>${props.title || 'No Title'}</h3>
+                ${props.address ? `<p><strong>Address:</strong> ${props.address}</p>` : ''}
+                ${props.proposal ? `<p>${props.proposal}</p>` : ''}
                 <p><strong>Coordinates:</strong> ${point.coords[1].toFixed(5)}, ${point.coords[0].toFixed(5)}</p>
             `;
             new mapboxgl.Popup().setLngLat(point.coords).setHTML(html).addTo(map);
