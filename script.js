@@ -8,7 +8,7 @@ const map = new mapboxgl.Map({
         basemap: { theme: "monochrome" }
     },
     center: [-122.5125, 37.9678], 
-    zoom: 18,
+    zoom: 17,
     pitch: 60,
     bearing: 20,
     antialias: true
