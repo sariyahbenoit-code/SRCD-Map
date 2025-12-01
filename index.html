@@ -1,16 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
 <head>
 <meta charset="UTF-8">
 <title>SRCD 3D Map</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta charset="utf-8">
-<title>SRCD Map with 3D Models</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.js"></script>
 
@@ -18,139 +12,59 @@
 <script src="https://unpkg.com/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <link rel="stylesheet" href="style.css">
-<script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
-
-<style>
-body { margin: 0; padding: 0; }
-#map { position: absolute; top: 0; bottom: 0; width: 100%; }
-</style>
 </head>
-<body>
 
+<body>
 <div id="map"></div>
 <canvas id="surfaceCanvas"></canvas>
 
-<script src="script.js"></script>
 <script>
-
-mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
+mapboxgl.accessToken = "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
 
 const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/standard',
-    config: { basemap: { theme: 'monochrome' }},
-    zoom: 12,
-    center: [-122.51465, 37.96558],
+    container: "map",
+    style: "mapbox://styles/snbenoi/cmhjgr9hh000001rcf6cy38p0",
+    center: [-122.5125, 37.9679],
+    zoom: 18,
     pitch: 60,
+    bearing: 0,
     antialias: true
 });
 
-fetch("data/619data.geojson")
-.then(response => response.json())
-.then(geojson => {
+map.addControl(
+    new mapboxgl.NavigationControl({
+        visualizePitch: true,
+        showCompass: true
+    }),
+    "top-right"
+);
 
-    map.on("load", () => {
-        map.addSource("sites", { type: "geojson", data: geojson });
-        map.addLayer({
-            id: "sites-points",
-            type: "circle",
-            source: "sites",
-            paint: {
-                "circle-radius": 6,
-                "circle-color": "#ff5500"
-            }
-        });
+map.on("load", () => {
+    const corners = [
+        [-122.537464, 37.984078],
+        [-122.477353, 37.984108],
+        [-122.477370, 37.952203],
+        [-122.537475, 37.952208]
+    ];
 
-        geojson.features.forEach((feature, index) => {
-            add3DModelAtPoint(feature, index);
-        });
+    const underUrl = "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/SFCD%20underground.jpg";
+    const surfaceUrl = "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/SRCD%20surface.jpg";
+
+    map.addSource("under-image", {
+        type: "image",
+        url: underUrl,
+        coordinates: corners
     });
-});
 
-function add3DModelAtPoint(feature, index) {
+    map.addLayer({
+        id: "under-layer",
+        type: "raster",
+        source: "under-image",
+        paint: { "raster-opacity": 1 }
+    });
 
-    const lngLat = feature.geometry.coordinates;
-    const modelAltitude = 0;
+    const surfaceCanvas = document.getElementById("surfaceCanvas");
+    const ctx = surfaceCanvas.getContext("2d", { alpha: true });
 
-    const mc = mapboxgl.MercatorCoordinate.fromLngLat(lngLat, modelAltitude);
-
-    const rotation = [Math.PI / 2, 0, 0];
-
-    const transform = {
-        translateX: mc.x,
-        translateY: mc.y,
-        translateZ: mc.z,
-        rotateX: rotation[0],
-        rotateY: rotation[1],
-        rotateZ: rotation[2],
-        scale: mc.meterInMercatorCoordinateUnits()
-    };
-
-    const layerID = "3d-model-" + index;
-
-    const customLayer = {
-        id: layerID,
-        type: "custom",
-        renderingMode: "3d",
-        onAdd: function (map, gl) {
-            this.camera = new THREE.Camera();
-            this.scene = new THREE.Scene();
-
-            // lighting
-            const light1 = new THREE.DirectionalLight(0xffffff);
-            light1.position.set(0, -70, 100).normalize();
-            this.scene.add(light1);
-
-            const light2 = new THREE.DirectionalLight(0xffffff);
-            light2.position.set(0, 70, 100).normalize();
-            this.scene.add(light2);
-            
-            const loader = new THREE.GLTFLoader();
-
-            loader.load(
-                "assets/models/model" + (index + 1) + ".gltf",
-                gltf => {
-                    gltf.scene.scale.set(1, 1, 1);
-                    this.scene.add(gltf.scene);
-                }
-            );
-
-            this.map = map;
-
-            this.renderer = new THREE.WebGLRenderer({
-                canvas: map.getCanvas(),
-                context: gl,
-                antialias: true
-            });
-
-            this.renderer.autoClear = false;
-        },
-        render: function (gl, matrix) {
-            const rotationX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0), transform.rotateX);
-            const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,1,0), transform.rotateY);
-            const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0,0,1), transform.rotateZ);
-
-            const m = new THREE.Matrix4().fromArray(matrix);
-            const l = new THREE.Matrix4()
-                .makeTranslation(transform.translateX, transform.translateY, transform.translateZ)
-                .scale(new THREE.Vector3(transform.scale, -transform.scale, transform.scale))
-                .multiply(rotationX)
-                .multiply(rotationY)
-                .multiply(rotationZ);
-
-            this.camera.projectionMatrix = m.multiply(l);
-
-            this.renderer.resetState();
-            this.renderer.render(this.scene, this.camera);
-
-            map.triggerRepaint();
-        }
-    };
-
-    map.addLayer(customLayer);
-}
-
-</script>
-</body>
-</html>
+    const surfaceImg = new Image();
+    surfaceImg.
