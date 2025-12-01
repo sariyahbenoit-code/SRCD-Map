@@ -1,220 +1,138 @@
-mapboxgl.accessToken =
-  "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
+mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
 
 const map = new mapboxgl.Map({
-    container: "map",
-    style: "mapbox://styles/snbenoi/cmhjgr9hh000001rcf6cy38p0",
-    center: [-122.5125, 37.9679],
-    zoom: 19,
+    container: 'map',
+    style: 'mapbox://styles/mapbox/standard',
+    zoom: 18,
+    center: [-122.51465, 37.96558],
     pitch: 60,
-    bearing: 0,
     antialias: true
 });
 
-const sidebarContent = document.getElementById("sidebar-content");
+map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true, showCompass: true }), 'top-right');
 
-let labels = [];
-let modelObjects = [];
+const modelPoints = [
+    {
+        coords: [-122.5115, 37.9675],
+        model: "assets/images/pond_pack.glb",
+        label: "Solar Powered Forebay and Extended Marsh Edge"
+    },
+    {
+        coords: [-122.537464, 37.984078],
+        model: "assets/images/bench.glb",
+        label: "Multipurpose seating"
+    },
+    {
+        coords: [-122.477353, 37.984108],
+        model: "assets/images/closet.glb",
+        label: "Storage units converted into Emergency Supply Inventory"
+    }
+];
 
-map.on("load", () => {
+let featureData = null;
 
-    fetch("https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/data/619data.geojson?raw=1")
-        .then(r => r.json())
-        .then(geojson => {
+// Load geojson for popup info
+fetch('data/619data.geojson')
+    .then(res => res.json())
+    .then(data => { featureData = data; initializeMap(); });
 
-            map.addSource("sites", { type: "geojson", data: geojson });
+function initializeMap() {
+    map.on('load', () => {
+        map.addSource("landmarks", { type: "geojson", data: featureData });
 
-            map.addLayer({
-                id: "sites-points",
-                type: "circle",
-                source: "sites",
-                paint: {
-                    "circle-radius": 10,
-                    "circle-color": "#ff6600",
-                    "circle-stroke-width": 2,
-                    "circle-stroke-color": "#000"
-                }
-            });
-
-            map.on("click", "sites-points", (e) => {
-                const f = e.features[0];
-                const p = f.properties;
-
-                const html =
-                    "<h3>" + p.Title + "</h3>" +
-                    "<p>" + p.Description + "</p>" +
-                    "<p>Coordinates: " + f.geometry.coordinates.join(", ") + "</p>";
-
-                new mapboxgl.Popup()
-                    .setLngLat(f.geometry.coordinates)
-                    .setHTML(html)
-                    .addTo(map);
-
-                sidebarContent.innerHTML = html;
-            });
-
-            const feats = geojson.features.slice().sort((a, b) => a.geometry.coordinates[1] - b.geometry.coordinates[1]);
-
-            const south = feats[0];
-            const mid = feats[1];
-            const north = feats[2];
-
-            const west = mid.geometry.coordinates[0] < north.geometry.coordinates[0] ? mid : north;
-            const east = mid.geometry.coordinates[0] > north.geometry.coordinates[0] ? mid : north;
-
-            add3DModel(south, 
-                "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/pond_pack.glb?raw=1",
-                "model-south",
-                "Solar Powered Forebay and Extended Marsh Edge"
-            );
-
-            add3DModel(west, 
-                "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/bench.glb?raw=1",
-                "model-west",
-                "Multipurpose Seating"
-            );
-
-            add3DModel(east, 
-                "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/closet.glb?raw=1",
-                "model-east",
-                "Storage units converted to Emergency Supply Inventory"
-            );
-        });
-
-    document.getElementById("toggleSites").addEventListener("change", (e) => {
-        map.setLayoutProperty("sites-points", "visibility", e.target.checked ? "visible" : "none");
-    });
-
-    document.getElementById("toggle3D").addEventListener("change", (e) => {
-        const v = e.target.checked ? "visible" : "none";
-        modelObjects.forEach(m => {
-            if (map.getLayer(m.layerId)) {
-                map.setLayoutProperty(m.layerId, "visibility", v);
+        map.addLayer({
+            id: "landmarks-layer",
+            type: "circle",
+            source: "landmarks",
+            paint: {
+                "circle-radius": 0, 
+                "circle-color": "#ffffff",
+                "circle-opacity": 0
             }
         });
-    });
 
-    document.getElementById("toggleLabels").addEventListener("change", (e) => {
-        const v = e.target.checked ? "block" : "none";
-        labels.forEach(lbl => lbl.style.display = v);
-    });
-});
-
-function add3DModel(feature, url, layerId, labelText) {
-
-    const lngLat = feature.geometry.coordinates;
-    const mc = mapboxgl.MercatorCoordinate.fromLngLat(lngLat, 0);
-
-    const transform = {
-        x: mc.x,
-        y: mc.y,
-        z: mc.z,
-        scale: mc.meterInMercatorCoordinateUnits() * 4
-    };
-
-    const camera = new THREE.Camera();
-    const scene = new THREE.Scene();
-    const loader = new THREE.GLTFLoader();
-    let model = null;
-
-    loader.load(url, (gltf) => {
-        model = gltf.scene;
-        model.traverse(o => {
-            if (o.isMesh) o.userData.pickable = true;
-        });
-        scene.add(model);
-    });
-
-    const customLayer = {
-        id: layerId,
-        type: "custom",
-        renderingMode: "3d",
-        onAdd: function (map, gl) {
-            this.renderer = new THREE.WebGLRenderer({
-                canvas: map.getCanvas(),
-                context: gl
-            });
-            this.renderer.autoClear = false;
-        },
-        render: function (gl, matrix) {
-            if (!model) return;
-
-            const m = new THREE.Matrix4().fromArray(matrix);
-            const t = new THREE.Matrix4()
-                .makeTranslation(transform.x, transform.y, transform.z)
-                .scale(new THREE.Vector3(transform.scale, -transform.scale, transform.scale));
-
-            camera.projectionMatrix = m.multiply(t);
-
-            this.renderer.resetState();
-            this.renderer.render(scene, camera);
-            map.triggerRepaint();
-        }
-    };
-
-    map.addLayer(customLayer);
-    modelObjects.push({ layerId, model, feature });
-
-    const label = document.createElement("div");
-    label.className = "label-3d";
-    label.innerText = labelText;
-    document.body.appendChild(label);
-    labels.push(label);
-
-    map.on("render", () => {
-        const screen = map.project(lngLat);
-        label.style.left = screen.x + "px";
-        label.style.top = screen.y + "px";
-    });
-
-    map.on("click", (e) => {
-        if (!model) return;
-
-        const mouse = new THREE.Vector2(
-            (e.point.x / map.getCanvas().clientWidth) * 2 - 1,
-            -(e.point.y / map.getCanvas().clientHeight) * 2 + 1
-        );
-
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, camera);
-        const hits = raycaster.intersectObjects(scene.children, true);
-
-        if (hits.length > 0) {
-            const p = feature.properties;
-            const html =
-                "<h3>" + p.Title + "</h3>" +
-                "<p>" + p.Description + "</p>" +
-                "<p>Coordinates: " + feature.geometry.coordinates.join(", ") + "</p>";
-
-            sidebarContent.innerHTML = html;
-
-            new mapboxgl.Popup()
-                .setLngLat(feature.geometry.coordinates)
-                .setHTML(html)
-                .addTo(map);
-        }
-    });
-
-    map.on("mousemove", (e) => {
-        if (!model) return;
-
-        const mouse = new THREE.Vector2(
-            (e.point.x / map.getCanvas().clientWidth) * 2 - 1,
-            -(e.point.y / map.getCanvas().clientHeight) * 2 + 1
-        );
-
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, camera);
-        const hits = raycaster.intersectObjects(scene.children, true);
-
-        if (hits.length > 0) {
-            model.traverse(o => {
-                if (o.material && o.material.emissive) o.material.emissive.setHex(0xff8800);
-            });
-        } else {
-            model.traverse(o => {
-                if (o.material && o.material.emissive) o.material.emissive.setHex(0x000000);
-            });
-        }
+        add3DModels();
+        setupPopups();
     });
 }
+
+function add3DModels() {
+    const THREE = window.THREE;
+    const labels = [];
+
+    modelPoints.forEach((point, idx) => {
+        const mc = mapboxgl.MercatorCoordinate.fromLngLat(point.coords, 0);
+        const scale = mc.meterInMercatorCoordinateUnits() * 50;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.Camera();
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(map.getCanvas().width, map.getCanvas().height);
+        renderer.domElement.style.position = 'absolute';
+        renderer.domElement.style.top = '0';
+        renderer.domElement.style.left = '0';
+        renderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(renderer.domElement);
+
+        const light1 = new THREE.DirectionalLight(0xffffff, 1);
+        light1.position.set(0, -70, 100).normalize();
+        scene.add(light1);
+        const light2 = new THREE.DirectionalLight(0xffffff, 1);
+        light2.position.set(0, 70, 100).normalize();
+        scene.add(light2);
+
+        const loader = new THREE.GLTFLoader();
+        let model;
+        loader.load(point.model, gltf => {
+            model = gltf.scene;
+            model.scale.set(scale, scale, scale);
+            model.position.set(mc.x, mc.y, mc.z);
+            scene.add(model);
+        });
+
+        const label = document.createElement('div');
+        label.className = 'model-label';
+        label.textContent = point.label;
+        document.body.appendChild(label);
+        labels.push({ label, coords: point.coords });
+
+        map.on('render', () => {
+            if (!model) return;
+            const rotation = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1,0,0), Math.PI / 2);
+            const m = new THREE.Matrix4().fromArray(map.transform.customProjectionMatrix || map.transform.cameraWorldMatrix);
+            camera.projectionMatrix = m.multiply(rotation);
+            renderer.render(scene, camera);
+
+            labels.forEach(l => {
+                const pos = map.project(l.coords);
+                l.label.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+            });
+        });
+
+        renderer.domElement.addEventListener('click', e => {
+            const features = map.queryRenderedFeatures(e.point, { layers: ['landmarks-layer'] });
+            if (!features.length) return;
+            const f = features[idx];
+            if (!f) return;
+            const props = f.properties;
+            const html = `
+                <h3>${props.title}</h3>
+                <p><strong>Address:</strong> ${props.address}</p>
+                <p>${props.proposal}</p>
+                <p><strong>Coordinates:</strong> ${point.coords[1].toFixed(5)}, ${point.coords[0].toFixed(5)}</p>
+            `;
+            new mapboxgl.Popup().setLngLat(point.coords).setHTML(html).addTo(map);
+            document.getElementById('featureInfo').innerHTML = html;
+        });
+    });
+}
+
+// Layer toggles
+document.getElementById('toggle3D').addEventListener('change', e => {
+    const visible = e.target.checked;
+    document.querySelectorAll('canvas').forEach(c => c.style.display = visible ? 'block' : 'none');
+});
+document.getElementById('toggleLabels').addEventListener('change', e => {
+    const visible = e.target.checked;
+    document.querySelectorAll('.model-label').forEach(l => l.style.display = visible ? 'block' : 'none');
+});
