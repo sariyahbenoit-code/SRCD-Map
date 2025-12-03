@@ -4,6 +4,7 @@ html, body {
     height: 100%;
     width: 100%;
     overflow: hidden;
+    font-family: "Roboto Mono", monospace;
 }
 
 #map {
@@ -11,4 +12,26 @@ html, body {
     top: 0;
     bottom: 0;
     width: 100%;
+}
+
+#title-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 5;
+    pointer-events: none; 
+}
+
+h1 {
+    margin: 0;
+    font-size: 72px;
+    font-weight: 700;
+    color: black;
+}
+
+h2 {
+    margin: 5px 0 0 0;
+    font-size: 36px;
+    font-weight: 400;
+    color: black;
 }
