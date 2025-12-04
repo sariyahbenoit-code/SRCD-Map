@@ -7,8 +7,12 @@ const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/light-v11',
     center: SRCD_CENTER,
-    zoom: 17
+    zoom: 17,
+    pitch: 60,   
+    bearing: -20,   
+    antialias: true  
 });
+
 
 let scene, camera, renderer;
 
