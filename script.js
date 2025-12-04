@@ -1,12 +1,14 @@
-mapboxgl.accessToken = "YOUR_MAPBOX_TOKEN";
+mapboxgl.accessToken =
+    "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
 
 const map = new mapboxgl.Map({
-  container: "map",
-  style: "mapbox://styles/mapbox/satellite-streets-v12",
-  center: [-122.5155, 37.9735],
-  zoom: 13,
-  pitch: 60,
-  bearing: 20
+    container: "map",
+    style: "mapbox://styles/mapbox/standard",
+    config: { basemap: { theme: "monochrome" } },
+    center: [-122.513922, 37.966597],
+    zoom: 17.5,
+    pitch: 60,
+    antialias: true
 });
 
 function addModel(id, url, coords) {
