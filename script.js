@@ -1,116 +1,165 @@
-
-// MAPBOX ACCESS TOKEN (12_3 VERSION)
-
 mapboxgl.accessToken =
     "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
-
-
-const INITIAL_CENTER = [-122.51444, 37.96703];
-const INITIAL_ZOOM = 17.5;
-const INITIAL_PITCH = 60;
 
 const map = new mapboxgl.Map({
     container: "map",
     style: "mapbox://styles/mapbox/standard",
-    center: INITIAL_CENTER,
-    zoom: INITIAL_ZOOM,
-    pitch: INITIAL_PITCH,
-    bearing: 0,
-    antialias: true,
-    config: { basemap: { theme: "monochrome" } }
-});
-
-
-// THREE.JS 3D MODELS
-
-const THREECAMERA = new THREE.Camera();
-const scene = new THREE.Scene();
-const renderer = new THREE.WebGLRenderer({
-    canvas: map.getCanvas(),
-    context: map.painter.context.gl,
+    config: { basemap: { theme: "monochrome" } },
+    center: [-122.513922, 37.966597], 
+    zoom: 17.5,
+    pitch: 60,
     antialias: true
 });
-renderer.autoClear = false;
+
+map.on("load", () => {
 
 
-const loader = new THREE.GLTFLoader();
+    fetch("data/619data.geojson")
+        .then(r => r.json())
+        .then(geojson => {
 
+            map.addSource("srcd-points", {
+                type: "geojson",
+                data: geojson
+            });
 
-function projectLngLat(lng, lat) {
-    return mapboxgl.MercatorCoordinate.fromLngLat({ lng, lat }, 0);
-}
+            map.addLayer({
+                id: "srcd-points-layer",
+                type: "circle",
+                source: "srcd-points",
+                paint: {
+                    "circle-radius": 8,
+                    "circle-color": "#ff5500",
+                    "circle-stroke-width": 2,
+                    "circle-stroke-color": "#ffffff"
+                }
+            });
 
+            map.on("click", "srcd-points-layer", (e) => {
+                const props = e.features[0].properties;
 
-// LOAD GLB OBJECTS
+                const html = `
+                    <strong>${props.Landmark}</strong><br>
+                    ${props.Address || ""}<br><br>
+                    ${props.Proposal || ""}
+                `;
 
-function loadGLB(url, lng, lat, scale = 1) {
-    loader.load(url, glb => {
-        const model = glb.scene;
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(html)
+                    .addTo(map);
+            });
 
-        const mc = projectLngLat(lng, lat);
-        model.position.set(mc.x, mc.y, mc.z || 0);
-        model.scale.set(scale, scale, scale);
-        model.rotation.x = Math.PI / 2;
+            add3DModels();
+        });
 
-        scene.add(model);
-        render();
-    });
-}
-
-
-loadGLB("bench.glb", -122.5153, 37.9678, 0.8);
-loadGLB("pond.glb", -122.5138, 37.9662, 1.0);
-loadGLB("closet.glb", -122.5135, 37.9675, 0.8);
-
-
-// MAP RENDER LOOP
-
-function render() {
-    const tr = map.transform;
-    THREECAMERA.projectionMatrix = new THREE.Matrix4().fromArray(tr.projMatrix);
-    renderer.resetState();
-    renderer.render(scene, THREECAMERA);
-}
-map.on("render", render);
-
-
-// UI BUTTONS — SAFE EVENT BINDING
-
-document.getElementById("zoomRegion").addEventListener("click", () => {
-    map.flyTo({
-        center: [-122.5162, 37.9670],
-        zoom: 16,
-        pitch: 60,
-        speed: 0.6
-    });
 });
+    
+// 3D MODELS
 
-document.getElementById("resetView").addEventListener("click", () => {
-    map.flyTo({
-        center: INITIAL_CENTER,
-        zoom: INITIAL_ZOOM,
-        pitch: INITIAL_PITCH,
-        bearing: 0,
-        speed: 0.6
-    });
-});
+function add3DModels() {
+    const THREE = window.THREE;
+    const loader = new THREE.GLTFLoader();
 
+    const models = [
+        {
+            id: "solar-forebay-south",
+            file: "assets/images/pond_pack.glb",
+            coords: [-122.51472840835794, 37.96556501819977] // SOUTH
+        },
+        {
+            id: "bench-nw",
+            file: "assets/images/bench.glb",
+            coords: [-122.51255653080607, 37.96784675899259] // NW
+        },
+        {
+            id: "closet-ne",
+            file: "assets/images/closet.glb",
+            coords: [-122.51172577538132, 37.96756766223187] // NE
+        }
+    ];
 
-// TOGGLE POINTS 
+    models.forEach(model => {
+        const mc = mapboxgl.MercatorCoordinate.fromLngLat(model.coords, 0);
 
-function safeToggle(id, layer) {
-    const checkbox = document.getElementById(id);
-    checkbox.addEventListener("change", () => {
-        if (!map.getLayer(layer)) return;
-        map.setLayoutProperty(
-            layer,
-            "visibility",
-            checkbox.checked ? "visible" : "none"
-        );
+        const transform = {
+            translateX: mc.x,
+            translateY: mc.y,
+            translateZ: mc.z,
+            rotateX: Math.PI / 2,
+            rotateY: 0,
+            rotateZ: 0,
+            scale: mc.meterInMercatorCoordinateUnits()
+        };
+
+        const customLayer = {
+            id: model.id,
+            type: "custom",
+            renderingMode: "3d",
+
+            onAdd: (map, gl) => {
+                this.camera = new THREE.Camera();
+                this.scene = new THREE.Scene();
+
+                const light1 = new THREE.DirectionalLight(0xffffff, 1);
+                light1.position.set(0, -70, 100).normalize();
+                this.scene.add(light1);
+
+                const light2 = new THREE.DirectionalLight(0xffffff, 1);
+                light2.position.set(0, 70, 100).normalize();
+                this.scene.add(light2);
+
+                loader.load(model.file, (gltf) => {
+                    gltf.scene.scale.set(1, 1, 1);
+                    this.scene.add(gltf.scene);
+                });
+
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: map.getCanvas(),
+                    context: gl,
+                    antialias: true
+                });
+
+                this.renderer.autoClear = false;
+            },
+
+            render: (gl, matrix) => {
+                const rotationX = new THREE.Matrix4().makeRotationAxis(
+                    new THREE.Vector3(1, 0, 0),
+                    transform.rotateX
+                );
+
+                const rotationY = new THREE.Matrix4().makeRotationAxis(
+                    new THREE.Vector3(0, 1, 0),
+                    transform.rotateY
+                );
+
+                const rotationZ = new THREE.Matrix4().makeRotationAxis(
+                    new THREE.Vector3(0, 0, 1),
+                    transform.rotateZ
+                );
+
+                const m = new THREE.Matrix4().fromArray(matrix);
+                const l = new THREE.Matrix4()
+                    .makeTranslation(transform.translateX, transform.translateY, transform.translateZ)
+                    .scale(
+                        new THREE.Vector3(
+                            transform.scale,
+                            -transform.scale,
+                            transform.scale
+                        )
+                    )
+                    .multiply(rotationX)
+                    .multiply(rotationY)
+                    .multiply(rotationZ);
+
+                this.camera.projectionMatrix = m.multiply(l);
+                this.renderer.resetState();
+                this.renderer.render(this.scene, this.camera);
+                map.triggerRepaint();
+            }
+        };
+
+        map.addLayer(customLayer);
     });
 }
-
-
-safeToggle("togglePond", "pond-points");
-safeToggle("toggleBench", "bench-points");
-safeToggle("toggleCloset", "closet-points");
