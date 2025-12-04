@@ -1,12 +1,13 @@
-
-
 mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
+
+
+const SRCD_CENTER = [-122.514522, 37.967155];
 
 const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/light-v11',
-    center: [-70.9286, 42.2330], 
-    zoom: 16
+    center: SRCD_CENTER,
+    zoom: 17
 });
 
 let scene, camera, renderer;
@@ -15,7 +16,12 @@ function initThreeJS() {
     const container = document.getElementById('three-container');
 
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(
+        45,
+        container.clientWidth / container.clientHeight,
+        0.1,
+        1000
+    );
     camera.position.set(0, 2, 5);
 
     renderer = new THREE.WebGLRenderer({ alpha: true });
@@ -48,7 +54,6 @@ function loadGLB(path, position, scale = 1) {
     );
 }
 
-
 const modelAssignments = [
     {
         name: "Solar Powered Forebay & Marsh (South)",
@@ -67,8 +72,6 @@ const modelAssignments = [
     }
 ];
 
-
-
 map.on('load', () => {
     initThreeJS();
 
@@ -79,6 +82,24 @@ map.on('load', () => {
             x: merc.x,
             y: 0,
             z: merc.y
-        }, 10);  
+        }, 10);
+    });
+});
+
+
+document.getElementById("zoomRegion").addEventListener("click", () => {
+    map.flyTo({
+        center: SRCD_CENTER,
+        zoom: 6,
+        speed: 0.7
+    });
+});
+
+
+document.getElementById("resetView").addEventListener("click", () => {
+    map.flyTo({
+        center: SRCD_CENTER,
+        zoom: 17,
+        speed: 0.7
     });
 });
