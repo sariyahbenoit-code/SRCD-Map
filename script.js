@@ -1,94 +1,84 @@
 
-mapboxgl.accessToken =
-"pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
+
+mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
 
 const map = new mapboxgl.Map({
-    container: "map",
-    style: "mapbox://styles/mapbox/standard",
-    config: { basemap: { theme: "monochrome" } },
-    center: [-122.4194, 37.7749],
-    zoom: 14,
-    pitch: 60,
-    bearing: -20,
-    antialias: true
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v11',
+    center: [-70.9286, 42.2330], 
+    zoom: 16
 });
 
-
-
 let scene, camera, renderer;
-let threeLoaded = false;
-
-const MODEL_PATHS = {
-    bench: "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/bench.glb",
-    closet: "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/closet.glb",
-    pond: "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/pond_pack.glb"
-};
-
 
 function initThreeJS() {
-    const canvas = map.getCanvas();
+    const container = document.getElementById('three-container');
 
-    renderer = new THREE.WebGLRenderer({
-        canvas: canvas,
-        context: canvas.getContext("webgl"),
-        antialias: true
-    });
-
-    renderer.autoClear = false;
     scene = new THREE.Scene();
-    camera = new THREE.Camera();
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 2, 5);
 
-    threeLoaded = true;
+    renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    animate();
 }
 
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
 
-function loadGLB(url, callback) {
+function loadGLB(path, position, scale = 1) {
     const loader = new THREE.GLTFLoader();
 
     loader.load(
-        url,
-        gltf => {
+        path,
+        function (gltf) {
             const model = gltf.scene;
-            model.scale.set(1, 1, 1);
-            console.log("Loaded:", url);
-            callback(model);
+            model.position.set(position.x, position.y, position.z);
+            model.scale.set(scale, scale, scale);
+            scene.add(model);
         },
         undefined,
-        err => console.error("GLB error:", url, err)
+        function (error) {
+            console.error("Error loading GLB:", error);
+        }
     );
 }
 
 
-function addModels() {
-    loadGLB(MODEL_PATHS.bench, model => {
-        model.position.set(0, 0, 0);
-        scene.add(model);
+const modelAssignments = [
+    {
+        name: "Solar Powered Forebay & Marsh (South)",
+        coords: [-70.92802, 42.23248],
+        glb: "assets/images/pond_pack.glb"
+    },
+    {
+        name: "Modular Multi-purpose Bench Stove (NW)",
+        coords: [-70.92944, 42.23424],
+        glb: "assets/images/bench.glb"
+    },
+    {
+        name: "Storage Units for Emergency Inventory (NE)",
+        coords: [-70.92766, 42.23416],
+        glb: "assets/images/closet.glb"
+    }
+];
+
+
+
+map.on('load', () => {
+    initThreeJS();
+
+    modelAssignments.forEach(item => {
+        const merc = mapboxgl.MercatorCoordinate.fromLngLat(item.coords, 0);
+
+        loadGLB(item.glb, {
+            x: merc.x,
+            y: 0,
+            z: merc.y
+        }, 10);  
     });
-
-    loadGLB(MODEL_PATHS.closet, model => {
-        model.position.set(5, 0, 0);
-        scene.add(model);
-    });
-
-    loadGLB(MODEL_PATHS.pond, model => {
-        model.position.set(-5, 0, 0);
-        scene.add(model);
-    });
-}
-
-
-
-map.on("style.load", () => {
-    if (!threeLoaded) initThreeJS();
-    addModels();
-
-    map.on("render", () => {
-        renderer.resetState();
-        renderer.render(scene, camera);
-    });
-});
-
-window.addEventListener("resize", () => {
-    const canvas = map.getCanvas();
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 });
