@@ -1,39 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>San Rafael Canal District Resilience Demonstration</title>
+    <meta charset="utf-8" />
+    <title>SRCD Map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
 
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.js"></script>
 
-  <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 
-  <div id="title-block">
-    <h1>San Rafael Canal District Resilience Demonstration</h1>
-    <h3>Conceptual Design Model and Adaptation Toolkit</h3>
-  </div>
+    <div id="title-container">
+        <h1>Habitual Preparedness.</h1>
+        <h2>revealing the urban ecology that protects us</h2>
+        <h3>map by Sariyah Benoit for Geog 183C</h3>
+    </div>
 
-  <div id="map"></div>
+    <div id="map"></div>
 
-  <div id="control-panel">
-    <h4>Zoom Options</h4>
+    <div id="control-panel">
+        <h4>Zoom options</h4>
 
-    <button id="zoomRegion" class="btn">Zoom to SRCD region</button>
-    <button id="resetView" class="btn">Reset view</button>
+        <button id="zoomRegion" class="btn">zoom to SRCD region</button>
+        <button id="resetView" class="btn">reset view</button>
 
-    <table>
-      <tr><td><label><input type="checkbox" id="togglePond"> Solar Powered Forebay & Marsh (South)</label></td></tr>
-      <tr><td><label><input type="checkbox" id="toggleBench"> Modular Multi-purpose Bench Stove (NW)</label></td></tr>
-      <tr><td><label><input type="checkbox" id="toggleCloset"> Storage Units for Emergency Inventory (NE)</label></td></tr>
-    </table>
-  </div>
+        <table>
+            <tr><td><label><input type="checkbox" id="togglePond"> Solar Powered Forebay & Marsh (South)</label></td></tr>
+            <tr><td><label><input type="checkbox" id="toggleBench"> Modular Multi-purpose Bench Stove (NW)</label></td></tr>
+            <tr><td><label><input type="checkbox" id="toggleCloset"> Storage Units for Emergency Inventory (NE)</label></td></tr>
+        </table>
+    </div>
 
-  <script src="main.js"></script>
+    <script src="script.js"></script>
 
 </body>
 </html>
