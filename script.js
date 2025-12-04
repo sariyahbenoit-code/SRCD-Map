@@ -1,5 +1,5 @@
 // -----------------------------
-// script.js — with 3D buildings restored and layer order corrected
+// script.js — updated for correct 3D visibility + working checkboxes
 // -----------------------------
 
 mapboxgl.accessToken =
@@ -18,7 +18,7 @@ const map = new mapboxgl.Map({
 });
 
 // ------------------------------------------------------------------
-// YOUR THREE MODEL DEFINITIONS
+// THREE MODEL DEFINITIONS
 // ------------------------------------------------------------------
 const modelData = [
   {
@@ -45,13 +45,13 @@ let THREEJS;
 const loadedModels = [];
 
 // ------------------------------------------------------------------
-// MAIN MAP LOAD
+// MAP LOAD
 // ------------------------------------------------------------------
 map.on("load", async () => {
   THREEJS = window.THREE;
 
   // ---------------------------------------------------------------
-  // 1. RESTORE MAPBOX 3D BUILDINGS (IDENTICAL TO OFFICIAL STYLE)
+  // RESTORE MAPBOX 3D BUILDINGS
   // ---------------------------------------------------------------
   const layers = map.getStyle().layers;
   let labelLayerId = null;
@@ -98,7 +98,7 @@ map.on("load", async () => {
   );
 
   // ---------------------------------------------------------------
-  // 2. ADD CUSTOM 3D OBJECT LAYER (THREE.JS)
+  // ADD CUSTOM THREE.JS LAYER (your objects)
   // ---------------------------------------------------------------
   const customLayer = {
     id: "srcd-3d-models",
@@ -140,6 +140,8 @@ map.on("load", async () => {
             model.position.set(merc.x, merc.y, merc.z);
             model.rotation.x = Math.PI / 2;
 
+            model.visible = m.visible;
+
             loadedModels.push({ id: m.id, mesh: model });
             this.scene.add(model);
           },
@@ -157,74 +159,60 @@ map.on("load", async () => {
     }
   };
 
-  // ADD THREE.JS MODELS *BELOW POINTS* BUT *ABOVE 3D BUILDINGS*
+  // Put 3D objects ABOVE buildings but BELOW point layer
   map.addLayer(customLayer, "3d-buildings");
 
-  // ------------------------------------------------------------------
-  // 3. BRING POINTS TO THE VERY TOP
-  // ------------------------------------------------------------------
-  // Your point layer id from earlier versions was "srcd-points"
-  // If it is different, tell me the name and I will adjust.
-  if (map.getLayer("srcd-points")) {
-    map.moveLayer("srcd-points");
+  // ---------------------------------------------------------------
+  // ENSURE POINTS ARE ALWAYS ON TOP
+  // ---------------------------------------------------------------
+  const pointLayerId = "srcd-points"; // <-- the ID from 12_3
+  if (map.getLayer(pointLayerId)) {
+    map.moveLayer(pointLayerId);
   }
 
-  // ------------------------------------------------------------------
-  // CHECKBOX VISIBILITY HANDLERS
-  // ------------------------------------------------------------------
-  const pondCheckbox = document.getElementById("togglePond");
-  const benchCheckbox = document.getElementById("toggleBench");
-  const closetCheckbox = document.getElementById("toggleCloset");
-
+  // ---------------------------------------------------------------
+  // CHECKBOXES CONTROL MODEL VISIBILITY
+  // ---------------------------------------------------------------
   function setModelVisibility(id, visible) {
     const entry = loadedModels.find((m) => m.id === id);
     if (entry && entry.mesh) entry.mesh.visible = visible;
   }
 
-  if (pondCheckbox)
-    pondCheckbox.addEventListener("change", (e) =>
+  document.getElementById("togglePond")
+    .addEventListener("change", (e) =>
       setModelVisibility("pond-model", e.target.checked)
     );
-  if (benchCheckbox)
-    benchCheckbox.addEventListener("change", (e) =>
+
+  document.getElementById("toggleBench")
+    .addEventListener("change", (e) =>
       setModelVisibility("bench-model", e.target.checked)
     );
-  if (closetCheckbox)
-    closetCheckbox.addEventListener("change", (e) =>
+
+  document.getElementById("toggleCloset")
+    .addEventListener("change", (e) =>
       setModelVisibility("closet-model", e.target.checked)
     );
-
-  if (pondCheckbox) pondCheckbox.checked = modelData[0].visible;
-  if (benchCheckbox) benchCheckbox.checked = modelData[1].visible;
-  if (closetCheckbox) closetCheckbox.checked = modelData[2].visible;
 });
 
 // ------------------------------------------------------------------
-// BUTTON CONTROLS (UNCHANGED)
+// BUTTON CONTROLS (unchanged)
 // ------------------------------------------------------------------
-const zoomRegionBtn = document.getElementById("zoomRegion");
-const resetViewBtn = document.getElementById("resetView");
-
-if (zoomRegionBtn) {
-  zoomRegionBtn.addEventListener("click", () => {
-    map.flyTo({
-      center: SRCD_CENTER,
-      zoom: map.getZoom() - 5,
-      pitch: 60,
-      bearing: -20,
-      speed: 0.8
-    });
+document.getElementById("zoomRegion").addEventListener("click", () => {
+  map.flyTo({
+    center: SRCD_CENTER,
+    zoom: map.getZoom() - 5,
+    pitch: 60,
+    bearing: -20,
+    speed: 0.8
   });
-}
+});
 
-if (resetViewBtn) {
-  resetViewBtn.addEventListener("click", () => {
-    map.flyTo({
-      center: SRCD_CENTER,
-      zoom: 17,
-      pitch: 60,
-      bearing: -20,
-      speed: 0.8
-    });
+document.getElementById("resetView").addEventListener("click", () => {
+  map.flyTo({
+    center: SRCD_CENTER,
+    zoom: 17,
+    pitch: 60,
+    bearing: -20,
+    speed: 0.8
   });
-}
+});
