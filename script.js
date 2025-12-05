@@ -93,7 +93,7 @@ function add3DBuildings() {
 async function addModelsFromGeoJSON(geojson) {
 
     const known = {
-        pond: [-122.51472840835794, 37.96556501819977],
+        pond: [-122.5146472, 37.9656917],
         bench: [-122.51255653080607, 37.96784675899259],
         closet: [-122.51172577538132, 37.96756766223187]
     };
