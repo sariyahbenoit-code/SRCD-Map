@@ -1,16 +1,13 @@
 // ================================
-// GLOBAL MODEL SCALE FACTOR
+// GLOBAL SCALE MULTIPLIER FOR GLB MODELS
 // ================================
-// Reduce this number to shrink all GLBs. Increase to enlarge.
-// 1.0 = current size, 0.2 = 1/5 smaller, etc.
-const MODEL_SCALE_FACTOR = 1.0;
-
+const MODEL_SIZE_MULTIPLIER = 0.2; // change this to scale all .glb models
 
 // ================================
 // MAP INITIALIZATION (UNCHANGED)
 // ================================
 mapboxgl.accessToken =
-    "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
+    "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xHNRb1aA";
 
 const map = new mapboxgl.Map({
     container: "map",
@@ -88,12 +85,12 @@ function add3DBuildings() {
 }
 
 // ================================
-// ADD MODELS — WITH GLOBAL SCALE VARIABLE
+// ADD MODELS — with scale multiplier
 // ================================
 async function addModelsFromGeoJSON(geojson) {
 
     const known = {
-        pond: [-122.5146472, 37.9656917],
+        pond: [-122.51472840835794, 37.96556501819977],
         bench: [-122.51255653080607, 37.96784675899259],
         closet: [-122.51172577538132, 37.96756766223187]
     };
@@ -123,7 +120,6 @@ async function addModelsFromGeoJSON(geojson) {
                 this.camera = new THREE.Camera();
                 this.scene = new THREE.Scene();
 
-                // lighting (unchanged)
                 const sun = new THREE.DirectionalLight(0xffffff, 1.5);
                 sun.position.set(150, 200, 300);
                 this.scene.add(sun);
@@ -134,12 +130,8 @@ async function addModelsFromGeoJSON(geojson) {
                 loader.load(modelUrl, (gltf) => {
                     const model = gltf.scene;
 
-                    // base conversion
                     const base = mc.meterInMercatorCoordinateUnits();
-
-                    // 🎯 apply global scale variable
-                    const scale = base * 20 * MODEL_SCALE_FACTOR;
-
+                    const scale = base * 20 * MODEL_SIZE_MULTIPLIER;
                     model.scale.set(scale, scale, scale);
 
                     model.rotation.x = Math.PI / 2;
@@ -159,7 +151,6 @@ async function addModelsFromGeoJSON(geojson) {
 
             render: function (gl, matrix) {
                 const m = new THREE.Matrix4().fromArray(matrix);
-
                 const trans = new THREE.Matrix4()
                     .makeTranslation(mc.x, mc.y, mc.z);
 
@@ -216,7 +207,7 @@ function setupToggles() {
 }
 
 // ================================
-// BUTTONS (unchanged)
+// BUTTONS (UNCHANGED)
 // ================================
 document.getElementById("zoomRegion").onclick = () =>
     map.flyTo({
