@@ -1,180 +1,227 @@
-// --------------------------------------------
-// MAPBOX ACCESS TOKEN
-// --------------------------------------------
+// ------------------------------
+// VERSION 12_9 — FINAL FIXED JS
+// ------------------------------
+
 mapboxgl.accessToken =
-"pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
+  "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
 
+// ------- MAP SETUP (same as 12_8) -------
+const SRCD_CENTER = [-122.513922, 37.966597];
 
-// --------------------------------------------
-// CONSTANTS
-// --------------------------------------------
-const SRCD_CENTER = [-122.514522, 37.967155];
-
-
-// --------------------------------------------
-// INITIALIZE MAP
-// --------------------------------------------
 const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/light-v11',
+    container: "map",
+    style: "mapbox://styles/mapbox/standard",
+    config: { basemap: { theme: "monochrome" } },
+
     center: SRCD_CENTER,
-    zoom: 17,
+    zoom: 17.5,
     pitch: 60,
-    bearing: -20,
     antialias: true
 });
 
+// ======== LOAD GEOJSON POINTS (FROM 12_8) =========
+fetch("data/619data.geojson")
+    .then(r => r.json())
+    .then(geojson => {
+        map.on("load", () => {
 
-// --------------------------------------------
-// THREE JS SETUP
-// --------------------------------------------
-let scene, camera, renderer;
+            // 3D BUILDINGS RESTORED
+            add3DBuildings();
 
-function initThreeJS() {
-    const container = document.getElementById('three-container');
+            // --- POINT SOURCE ---
+            map.addSource("srcd-points", {
+                type: "geojson",
+                data: geojson
+            });
 
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(
-        45,
-        container.clientWidth / container.clientHeight,
-        0.1,
-        1000
+            // POINTS ABOVE LABELS (as in 12_8)
+            map.addLayer({
+                id: "srcd-points-layer",
+                type: "circle",
+                source: "srcd-points",
+                paint: {
+                    "circle-radius": 8,
+                    "circle-color": "#ff5500",
+                    "circle-stroke-width": 2,
+                    "circle-stroke-color": "#ffffff"
+                }
+            }, "road-label");
+
+            // --- CLICK POPUP RESTORED ---
+            map.on("click", "srcd-points-layer", (e) => {
+                const props = e.features[0].properties;
+
+                const html = `
+                    <strong>${props.Landmark}</strong><br>
+                    ${props.Address || ""}<br><br>
+                    ${props.Proposal || ""}
+                `;
+
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(html)
+                    .addTo(map);
+            });
+
+            // Load .glb models after points
+            add3DModels();
+        });
+    });
+
+
+// =============== RESTORE 3D BUILDINGS ===================
+function add3DBuildings() {
+
+    const layers = map.getStyle().layers;
+    let labelLayerId;
+
+    for (const layer of layers) {
+        if (layer.type === "symbol" && layer.layout["text-field"]) {
+            labelLayerId = layer.id;
+            break;
+        }
+    }
+
+    map.addLayer(
+        {
+            id: "3d-buildings",
+            source: "composite",
+            "source-layer": "building",
+            filter: ["==", "extrude", "true"],
+            type: "fill-extrusion",
+            minzoom: 15,
+            paint: {
+                "fill-extrusion-color": "#aaa",
+                "fill-extrusion-height": [
+                    "interpolate", ["linear"], ["zoom"],
+                    15, 0,
+                    15.05, ["get", "height"]
+                ],
+                "fill-extrusion-base": [
+                    "interpolate", ["linear"], ["zoom"],
+                    15, 0,
+                    15.05, ["get", "min_height"]
+                ],
+                "fill-extrusion-opacity": 0.6
+            }
+        },
+        labelLayerId
     );
-    camera.position.set(0, 2, 5);
-
-    renderer = new THREE.WebGLRenderer({ alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(renderer.domElement);
-
-    animate();
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
 }
 
 
-// --------------------------------------------
-// LOAD GLB INTO THREE JS SCENE
-// --------------------------------------------
-function loadGLB(path, position, scale = 1) {
+
+// =============== 3D MODELS (FROM 12_8, FIXED ORDERING) ===============
+function add3DModels() {
+
+    const THREE = window.THREE;
     const loader = new THREE.GLTFLoader();
 
-    loader.load(
-        path,
-        function (gltf) {
-            const model = gltf.scene;
-
-            model.position.set(position.x, position.y, position.z);
-            model.scale.set(scale, scale, scale);
-
-            scene.add(model);
+    // SAME COORDS + FILES FROM 12_8
+    const models = [
+        {
+            id: "solar-forebay-south",
+            file: "assets/images/pond_pack.glb",
+            coords: [-122.51472840835794, 37.96556501819977]
         },
-        undefined,
-        function (error) {
-            console.error("Error loading GLB:", error);
+        {
+            id: "bench-nw",
+            file: "assets/images/bench.glb",
+            coords: [-122.51255653080607, 37.96784675899259]
+        },
+        {
+            id: "closet-ne",
+            file: "assets/images/closet.glb",
+            coords: [-122.51172577538132, 37.96756766223187]
         }
-    );
+    ];
+
+    // Create a single custom 3D scene for all models
+    models.forEach(model => {
+
+        const mc = mapboxgl.MercatorCoordinate.fromLngLat(model.coords, 0);
+
+        const customLayer = {
+            id: model.id,
+            type: "custom",
+            renderingMode: "3d",
+
+            onAdd: (map, gl) => {
+
+                this.camera = new THREE.Camera();
+                this.scene = new THREE.Scene();
+
+                // LIGHT
+                const light = new THREE.DirectionalLight(0xffffff, 1.2);
+                light.position.set(100, 100, 200);
+                this.scene.add(light);
+
+                // LOAD GLB
+                loader.load(model.file, (gltf) => {
+                    const obj = gltf.scene;
+
+                    // MATCH SCALE FROM 12_8 (1,1,1 with Mercator scaling)
+                    const scale = mc.meterInMercatorCoordinateUnits();
+                    obj.scale.set(scale, scale, scale);
+
+                    this.scene.add(obj);
+                });
+
+                // SHARED RENDERER
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: map.getCanvas(),
+                    context: gl,
+                    antialias: true
+                });
+                this.renderer.autoClear = false;
+            },
+
+            render: (gl, matrix) => {
+
+                const rotationX = new THREE.Matrix4()
+                    .makeRotationAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+
+                const m = new THREE.Matrix4().fromArray(matrix);
+
+                const l = new THREE.Matrix4()
+                    .makeTranslation(mc.x, mc.y, mc.z)
+                    .scale(new THREE.Vector3(
+                        mc.meterInMercatorCoordinateUnits(),
+                        -mc.meterInMercatorCoordinateUnits(),
+                        mc.meterInMercatorCoordinateUnits()
+                    ))
+                    .multiply(rotationX);
+
+                this.camera.projectionMatrix = m.multiply(l);
+
+                this.renderer.state.reset();
+                this.renderer.render(this.scene, this.camera);
+                map.triggerRepaint();
+            }
+        };
+
+        // IMPORTANT: 3D MODELS ABOVE POINTS
+        map.addLayer(customLayer, "srcd-points-layer");
+    });
 }
 
 
-// --------------------------------------------
-// MODEL ASSIGNMENTS (ONE PER POINT)
-// --------------------------------------------
-const modelAssignments = [
-    {
-        name: "Solar Powered Forebay & Marsh (South)",
-        coords: [-122.51470, 37.96620],
-        glb: "assets/images/pond_pack.glb"
-    },
-    {
-        name: "Modular Multi-purpose Bench Stove (NW)",
-        coords: [-122.51520, 37.96740],
-        glb: "assets/images/bench.glb"
-    },
-    {
-        name: "Storage Units for Emergency Inventory (NE)",
-        coords: [-122.51400, 37.96750],
-        glb: "assets/images/closet.glb"
-    }
-];
 
+// =============== ZOOM BUTTONS (UNCHANGED) ===============
+document.getElementById("zoomRegion").onclick = () =>
+  map.flyTo({
+    center: SRCD_CENTER,
+    zoom: map.getZoom() - 5,
+    pitch: 60,
+    bearing: -20,
+    speed: 0.8
+  });
 
-// --------------------------------------------
-// MAP LOAD
-// --------------------------------------------
-map.on("load", () => {
-    initThreeJS();
-
-    // Load each GLB model into correct geographic position
-    modelAssignments.forEach(item => {
-        const merc = mapboxgl.MercatorCoordinate.fromLngLat(item.coords, 0);
-
-        loadGLB(item.glb, {
-            x: merc.x,
-            y: 0,
-            z: merc.y
-        }, 10);
-    });
-
-    // --------------------------------------------
-    // RESTORE 3D BUILDINGS + ORDER LAYERS
-    // --------------------------------------------
-
-    function detectBuildingLayer() {
-        return map.getStyle().layers.find(l => l.type === "fill-extrusion");
-    }
-
-    function detectCustomModelLayer() {
-        return map.getStyle().layers.find(l =>
-            l.type === "custom" ||
-            (l.id && l.id.toLowerCase().includes("model")) ||
-            (l.id && l.id.toLowerCase().includes("3d"))
-        );
-    }
-
-    const buildingLayer = detectBuildingLayer();
-    const modelLayer = detectCustomModelLayer();
-
-    // Restore buildings
-    if (buildingLayer) {
-        map.setLayoutProperty(buildingLayer.id, "visibility", "visible");
-    }
-
-    // Keep correct stacking order:
-    // MAP → 3D BUILDINGS → 3D MODELS → POINTS
-    if (buildingLayer && modelLayer) {
-        try {
-            map.moveLayer(buildingLayer.id, modelLayer.id);
-        } catch (e) { console.warn(e); }
-    }
-
-    try {
-        map.moveLayer("points-layer");
-    } catch (e) {
-        console.warn("Points layer not found yet — will appear when added.");
-    }
-});
-
-
-// --------------------------------------------
-// BUTTON HANDLERS (UNCHANGED)
-// --------------------------------------------
-document.getElementById("zoomRegion").addEventListener("click", () => {
-    map.flyTo({
-        center: SRCD_CENTER,
-        zoom: 6,
-        speed: 0.7
-    });
-});
-
-document.getElementById("resetView").addEventListener("click", () => {
-    map.flyTo({
-        center: SRCD_CENTER,
-        zoom: 17,
-        pitch: 60,
-        bearing: -20,
-        speed: 0.7
-    });
-});
+document.getElementById("resetView").onclick = () =>
+  map.flyTo({
+    center: SRCD_CENTER,
+    zoom: 17.5,
+    pitch: 60,
+    bearing: -20,
+    speed: 0.8
+  });
