@@ -174,7 +174,7 @@ function addGLBModelAt(lngLat, index) {
 // ----------------------------------------
 document.getElementById("zoomRegion").onclick = () => {
     map.flyTo({
-        center: [148.9819, -35.3981],
+        center: [-122.514522, 37.967155 ],
         zoom: 19,
         pitch: 60,
         bearing: 0
@@ -183,7 +183,7 @@ document.getElementById("zoomRegion").onclick = () => {
 
 document.getElementById("resetView").onclick = () => {
     map.flyTo({
-        center: [148.9819, -35.3981],
+        center: [-122.514522, 37.967155 ],
         zoom: 18,
         pitch: 60,
         bearing: 0
