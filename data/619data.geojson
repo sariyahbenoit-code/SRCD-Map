@@ -11,11 +11,11 @@
         "Precedent1": ""
       },
       "geometry": {
+        "type": "Point",
         "coordinates": [
           -122.51172577538132,
           37.96756766223187
-        ],
-        "type": "Point"
+        ]
       },
       "id": 0
     },
@@ -30,11 +30,11 @@
         "Precedent1": "https://riyahniko.com/wp-content/uploads/2025/11/Screenshot-2025-11-03-at-9.44.26-AM.png"
       },
       "geometry": {
+        "type": "Point",
         "coordinates": [
           -122.51472840835794,
           37.96556501819977
-        ],
-        "type": "Point"
+        ]
       }
     },
     {
@@ -51,11 +51,11 @@
         "Precedent2": "https://riyahniko.com/wp-content/uploads/2025/11/Screenshot-2025-11-03-at-9.45.34-AM.png"
       },
       "geometry": {
+        "type": "Point",
         "coordinates": [
           -122.51255653080607,
           37.96784675899259
-        ],
-        "type": "Point"
+        ]
       }
     }
   ]
