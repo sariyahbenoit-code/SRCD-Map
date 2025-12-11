@@ -1,8 +1,11 @@
+// Three.js imports
 import * as THREE from "three";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/DRACOLoader.js";
 
-mapboxgl.accessToken = "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
+// Mapbox access token and map setup
+mapboxgl.accessToken =
+  "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
 
 const targetCenter = [-122.514522, 37.967155];
 
@@ -13,13 +16,14 @@ const map = new mapboxgl.Map({
   center: targetCenter,
   zoom: 17,
   pitch: 60,
-  antialias: true
+  antialias: true,
 });
 
 map.on("error", (e) => console.error("MAPBOX ERROR:", e.error));
 
 let renderer, scene, camera;
 
+// Three.js loaders
 const loader = new GLTFLoader();
 const draco = new DRACOLoader();
 draco.setDecoderPath(
@@ -27,6 +31,7 @@ draco.setDecoderPath(
 );
 loader.setDRACOLoader(draco);
 
+// Model positions
 const benchOrigin = [-122.512606, 37.967814];
 const pondOrigin = [-122.5144361, 37.96595];
 const closetOrigin = [-122.513856, 37.967939];
@@ -43,7 +48,7 @@ function makeTransform(origin) {
     rotateX: modelRotate[0],
     rotateY: modelRotate[1],
     rotateZ: modelRotate[2],
-    scale: mc.meterInMercatorCoordinateUnits()
+    scale: mc.meterInMercatorCoordinateUnits(),
   };
 }
 
@@ -69,9 +74,9 @@ async function loadModel(url, scale = 200) {
   });
 }
 
-
 let benchModel, pondModel, closetModel;
 
+// Custom 3D layer
 const customLayer = {
   id: "3d-model-layer",
   type: "custom",
@@ -84,25 +89,41 @@ const customLayer = {
     renderer = new THREE.WebGLRenderer({
       canvas: map.getCanvas(),
       context: gl,
-      antialias: true
+      antialias: true,
     });
     renderer.autoClear = false;
 
-    benchModel = await loadModel("assets/models/bench.glb");
-    pondModel = await loadModel("assets/models/pond_pack.glb");
-    closetModel = await loadModel("assets/models/closet.glb");
+    try {
+      benchModel = await loadModel("assets/models/bench.glb");
+      scene.add(benchModel);
+    } catch (e) {
+      console.warn("Bench model not added.");
+    }
 
-    scene.add(benchModel);
-    scene.add(pondModel);
-    scene.add(closetModel);
+    try {
+      pondModel = await loadModel("assets/models/pond_pack.glb");
+      scene.add(pondModel);
+    } catch (e) {
+      console.warn("Pond model not added.");
+    }
+
+    try {
+      closetModel = await loadModel("assets/models/closet.glb");
+      scene.add(closetModel);
+    } catch (e) {
+      console.warn("Closet model not added.");
+    }
   },
 
   render: (gl, matrix) => {
-    if (!benchModel) return;
+    // If no models loaded yet, skip rendering but do not break the map
+    if (!benchModel && !pondModel && !closetModel) return;
 
     renderer.resetState();
 
     function renderModel(obj, t) {
+      if (!obj) return;
+
       const rotX = new THREE.Matrix4().makeRotationAxis(
         new THREE.Vector3(1, 0, 0),
         t.rotateX
@@ -141,15 +162,17 @@ const customLayer = {
     renderModel(closetModel, closetTransform);
 
     map.triggerRepaint();
-  }
+  },
 };
 
 map.on("load", () => {
+  // 3D models
   map.addLayer(customLayer);
 
+  // GeoJSON points
   map.addSource("srcd-points", {
     type: "geojson",
-    data: "data/619data.geojson"
+    data: "data/619data.geojson",
   });
 
   map.addLayer({
@@ -160,10 +183,11 @@ map.on("load", () => {
       "circle-radius": 6,
       "circle-color": "#e63946",
       "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": 1.5
-    }
+      "circle-stroke-width": 1.5,
+    },
   });
 
+  // Hover cursor
   map.on("mouseenter", "srcd-points-layer", () => {
     map.getCanvas().style.cursor = "pointer";
   });
@@ -172,7 +196,7 @@ map.on("load", () => {
     map.getCanvas().style.cursor = "";
   });
 
-     // Popup on click using your GeoJSON fields + PopupMedia
+  // Popup on click using GeoJSON fields + PopupMedia
   map.on("click", "srcd-points-layer", (e) => {
     if (!e.features || !e.features.length) return;
     const feature = e.features[0];
@@ -196,12 +220,26 @@ map.on("load", () => {
     if (proposal) html += `<br><br><strong>Proposal:</strong> ${proposal}`;
 
     const links = [];
-    if (proposalLink) links.push(`<a href="${proposalLink}" target="_blank">Proposal image</a>`);
-    if (existingLink) links.push(`<a href="${existingLink}" target="_blank">Existing condition</a>`);
-    if (precedent1)  links.push(`<a href="${precedent1}" target="_blank">Precedent 1</a>`);
-    if (precedent2)  links.push(`<a href="${precedent2}" target="_blank">Precedent 2</a>`);
-    if (extras1)     links.push(`<a href="${extras1}" target="_blank">Extra 1</a>`);
-    if (extras2)     links.push(`<a href="${extras2}" target="_blank">Extra 2</a>`);
+    if (proposalLink)
+      links.push(
+        `<a href="${proposalLink}" target="_blank">Proposal image</a>`
+      );
+    if (existingLink)
+      links.push(
+        `<a href="${existingLink}" target="_blank">Existing condition</a>`
+      );
+    if (precedent1)
+      links.push(
+        `<a href="${precedent1}" target="_blank">Precedent 1</a>`
+      );
+    if (precedent2)
+      links.push(
+        `<a href="${precedent2}" target="_blank">Precedent 2</a>`
+      );
+    if (extras1)
+      links.push(`<a href="${extras1}" target="_blank">Extra 1</a>`);
+    if (extras2)
+      links.push(`<a href="${extras2}" target="_blank">Extra 2</a>`);
 
     if (links.length) {
       html += "<br><br><strong>Links:</strong><br>" + links.join("<br>");
@@ -229,13 +267,14 @@ map.on("load", () => {
       .setHTML(html)
       .addTo(map);
   });
+});
 
-
+// UI controls
 document.getElementById("zoomRegion").addEventListener("click", () => {
   map.flyTo({
     center: targetCenter,
     zoom: 14,
-    speed: 0.6
+    speed: 0.6,
   });
 });
 
@@ -243,7 +282,7 @@ document.getElementById("resetView").addEventListener("click", () => {
   map.flyTo({
     center: targetCenter,
     zoom: 16,
-    speed: 0.6
+    speed: 0.6,
   });
 });
 
