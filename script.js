@@ -94,32 +94,32 @@ const customLayer = {
     renderer.autoClear = false;
 
     try {
-  benchModel = await loadModel(
-    "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/models/bench.glb"
-  );
-  scene.add(benchModel);
-} catch (e) {
-  console.warn("Bench model not added.");
-}
+      benchModel = await loadModel(
+        "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/models/bench.glb"
+      );
+      scene.add(benchModel);
+    } catch (e) {
+      console.warn("Bench model not added.");
+    }
 
-try {
-  pondModel = await loadModel(
-    "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/models/pond_pack.glb"
-  );
-  scene.add(pondModel);
-} catch (e) {
-  console.warn("Pond model not added.");
-}
+    try {
+      pondModel = await loadModel(
+        "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/models/pond_pack.glb"
+      );
+      scene.add(pondModel);
+    } catch (e) {
+      console.warn("Pond model not added.");
+    }
 
-try {
-  closetModel = await loadModel(
-    "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/models/closet.glb"
-  );
-  scene.add(closetModel);
-} catch (e) {
-  console.warn("Closet model not added.");
-}
-
+    try {
+      closetModel = await loadModel(
+        "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/models/closet.glb"
+      );
+      scene.add(closetModel);
+    } catch (e) {
+      console.warn("Closet model not added.");
+    }
+  }, // <- close onAdd here
 
   render: (gl, matrix) => {
     // If no models loaded yet, skip rendering but do not break the map
@@ -202,7 +202,7 @@ map.on("load", () => {
     map.getCanvas().style.cursor = "";
   });
 
- 
+  // Popup on click using GeoJSON fields + PopupMedia
   map.on("click", "srcd-points-layer", (e) => {
     if (!e.features || !e.features.length) return;
     const feature = e.features[0];
@@ -251,7 +251,7 @@ map.on("load", () => {
       html += "<br><br><strong>Links:</strong><br>" + links.join("<br>");
     }
 
-    // Embedded media from PopupMedia (clickable thumbnail)
+    // Embedded media from PopupMedia (clickable thumbnail, min 600px)
     if (popupMedia) {
       const lower = popupMedia.toLowerCase();
       const isImage =
@@ -262,7 +262,6 @@ map.on("load", () => {
         lower.endsWith(".webp");
 
       if (isImage) {
-        // Image fills popup width, but at least 600px if space allows
         html +=
           '<br><br>' +
           '<a href="' + popupMedia + '" target="_blank" style="display:inline-block; width: 100%;">' +
@@ -270,7 +269,6 @@ map.on("load", () => {
             'style="display:block; width: 100%; height: auto; min-width: 600px; max-width: 100%;">' +
           '</a>';
       } else {
-        // PDF or other file
         html +=
           '<br><br><a href="' + popupMedia +
           '" target="_blank"><strong>Open attached media</strong></a>';
@@ -278,15 +276,14 @@ map.on("load", () => {
     }
 
     new mapboxgl.Popup({
-        offset: [0, -150],  
-        anchor: "bottom"
+        offset: [0, -150],
+        anchor: "bottom",
       })
       .setLngLat(coordinates)
       .setHTML(html)
       .addTo(map);
   });
 });
-
 
 // UI controls
 document.getElementById("zoomRegion").addEventListener("click", () => {
