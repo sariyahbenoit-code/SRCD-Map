@@ -60,6 +60,10 @@ html, body {
     padding: 8px;
     margin-top: 6px;
     cursor: pointer;
+    border: 1px solid #333;
+    background: #eee;
+    border-radius: 4px;
+}
 
 .mapboxgl-popup {
   max-width: 720px;
@@ -68,8 +72,4 @@ html, body {
 .mapboxgl-popup-content {
   width: 100%;
   box-sizing: border-box;
-}
-    border: 1px solid #333;
-    background: #eee;
-    border-radius: 4px;
 }
