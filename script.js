@@ -14,8 +14,6 @@ const map = new mapboxgl.Map({
     antialias: true
 });
 
-let renderer, scene, camera;
-
 import {
   GLTFLoader
 } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/GLTFLoader.js";
@@ -25,6 +23,10 @@ import {
 } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/DRACOLoader.js";
 
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.159/build/three.module.js";
+
+let renderer, scene, camera;
+
+
 
 const loader = new GLTFLoader();
 const draco = new DRACOLoader();
@@ -58,7 +60,6 @@ const pondTransform = makeTransform(pondOrigin);
 const closetTransform = makeTransform(closetOrigin);
 
 
-let benchModel, pondModel, closetModel;
 
 async function loadModel(url, scale = 200) {
   return new Promise((resolve, reject) => {
@@ -73,6 +74,8 @@ async function loadModel(url, scale = 200) {
     );
   });
 }
+let benchModel, pondModel, closetModel;
+
 
 
 const customLayer = {
@@ -90,7 +93,7 @@ const customLayer = {
       antialias: true,
     });
     
-      renderer.autoClear = false;
+    renderer.autoClear = false;
 
     benchModel = await loadModel("assets/models/bench.glb");
     pondModel = await loadModel("assets/models/pond_pack.glb");
@@ -101,7 +104,7 @@ const customLayer = {
     scene.add(closetModel);
   },
 
-render: function (gl, matrix) {
+render: (gl, matrix) => {
     if (!benchModel) return;
 
     renderer.resetState();
@@ -125,7 +128,6 @@ function renderModel(obj, t) {
         t.translateY,
         t.translateZ
       );
-
         const scale = new THREE.Matrix4().makeScale(t.scale, -t.scale, t.scale);
 
 
