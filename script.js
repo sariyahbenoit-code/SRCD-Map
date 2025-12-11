@@ -197,6 +197,7 @@ map.on("load", () => {
   });
 
   // Popup on click using GeoJSON fields + PopupMedia
+    // Popup on click using GeoJSON fields + PopupMedia
   map.on("click", "srcd-points-layer", (e) => {
     if (!e.features || !e.features.length) return;
     const feature = e.features[0];
@@ -246,7 +247,6 @@ map.on("load", () => {
     }
 
     // Embedded media from PopupMedia (clickable thumbnail)
-        // Embedded media from PopupMedia (clickable thumbnail)
     if (popupMedia) {
       const lower = popupMedia.toLowerCase();
       const isImage =
@@ -276,6 +276,9 @@ map.on("load", () => {
       .setLngLat(coordinates)
       .setHTML(html)
       .addTo(map);
+  });
+
+});
 
 
 // UI controls
