@@ -255,19 +255,19 @@ map.on("load", () => {
         lower.endsWith(".gif") ||
         lower.endsWith(".webp");
 
-      if (isImage) {
+           if (isImage) {
         html +=
           '<br><br>' +
-          '<a href="' + popupMedia + '" target="_blank" style="display:inline-block;">' +
+          '<a href="' + popupMedia + '" target="_blank" style="display:inline-block; width: 100%;">' +
             '<img src="' + popupMedia + '" alt="Popup media" ' +
-            'style="max-width: 240px; width: 100%; display: block;">' +
+            'style="display:block; width: 100%; height: auto; max-width: 100%;">' +
           '</a>';
       } else {
         html +=
           '<br><br><a href="' + popupMedia +
           '" target="_blank"><strong>Open attached media</strong></a>';
       }
-    }
+
 
     new mapboxgl.Popup({ offset: 12 })
       .setLngLat(coordinates)
