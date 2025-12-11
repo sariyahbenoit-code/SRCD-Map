@@ -167,25 +167,70 @@ map.on("load", () => {
     map.getCanvas().style.cursor = "";
   });
 
+    // Popup on click using your GeoJSON fields + extra images
   map.on("click", "srcd-points-layer", (e) => {
     if (!e.features || !e.features.length) return;
     const feature = e.features[0];
-
     const props = feature.properties || {};
-    const name = props.name || props.Title || "Point";
-    const desc =
-      props.description ||
-      props.Description ||
-      props.notes ||
-      "";
+
+    const landmark = props["Landmark"] || "Landmark";
+    const address = props["Address"] || "";
+    const proposal = props["Proposal"] || "";
+    const proposalLink = props["Proposal Link"] || "";
+    const existingLink = props["Existing Link"] || "";
+    const precedent1 = props["Precedent1"] || "";
+    const precedent2 = props["Precedent2"] || "";
+    const extras1 = props["Extras1"] || "";
+    const extras2 = props["Extras 2"] || "";
 
     const coordinates = feature.geometry.coordinates.slice();
 
+    let html = `<strong>${landmark}</strong>`;
+    if (address) html += `<br>${address}`;
+    if (proposal) html += `<br><br><strong>Proposal:</strong> ${proposal}`;
+
+    // Add table of links from properties
+    const links = [];
+    if (proposalLink) links.push(`<a href="${proposalLink}" target="_blank">Proposal image</a>`);
+    if (existingLink) links.push(`<a href="${existingLink}" target="_blank">Existing condition</a>`);
+    if (precedent1) links.push(`<a href="${precedent1}" target="_blank">Precedent 1</a>`);
+    if (precedent2) links.push(`<a href="${precedent2}" target="_blank">Precedent 2</a>`);
+    if (extras1)   links.push(`<a href="${extras1}" target="_blank">Extra 1</a>`);
+    if (extras2)   links.push(`<a href="${extras2}" target="_blank">Extra 2</a>`);
+
+    if (links.length) {
+      html += "<br><br><strong>Links:</strong><br>" + links.join("<br>");
+    }
+
+    // --- EXTRA: one popup image/link per coordinate ---
+
+    const lng = coordinates[0];
+    const lat = coordinates[1];
+
+    // Use a small tolerance because coordinates are floating-point
+    const isClose = (a, b, tol = 1e-6) => Math.abs(a - b) < tol;
+
+    // 1) Erin image at -122.513856, 37.967939
+    if (isClose(lng, -122.513856) && isClose(lat, 37.967939)) {
+      const erinUrl = "https://github.com/sariyahbenoit-code/SRCD-Map/raw/main/assets/images/erin.jpg";
+      html += `<br><br><img src="${erinUrl}" alt="Erin image" style="max-width: 240px; width: 100%; display: block;">`;
+    }
+
+    // 2) Peak image at -122.512606, 37.967814
+    if (isClose(lng, -122.512606) && isClose(lat, 37.967814)) {
+      const peakUrl = "https://github.com/sariyahbenoit-code/SRCD-Map/raw/main/assets/images/peak.jpg";
+      html += `<br><br><img src="${peakUrl}" alt="Peak image" style="max-width: 240px; width: 100%; display: block;">`;
+    }
+
+    // 3) PDF at -122.5144361, 37.96595
+    if (isClose(lng, -122.5144361) && isClose(lat, 37.96595)) {
+      const pdfUrl = "https://github.com/sariyahbenoit-code/SRCD-Map/raw/main/assets/images/final%20review%20print.pdf";
+      html += `<br><br><a href="${pdfUrl}" target="_blank"><strong>Open final review print (PDF)</strong></a>`;
+    }
+
     new mapboxgl.Popup({ offset: 12 })
       .setLngLat(coordinates)
-      .setHTML(
-        `<strong>${name}</strong>${desc ? "<br>" + desc : ""}`
-      )
+      .setHTML(html)
       .addTo(map);
   });
 });
