@@ -8,7 +8,7 @@ const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/standard',
     config: { basemap: { theme: 'monochrome' }},
-    center: modelOrigin,
+    center: targetCenter,
     zoom: 17,
     pitch: 60,
     antialias: true
