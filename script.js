@@ -1,3 +1,11 @@
+import mapboxgl from "https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.js";
+
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.159/build/three.module.js";
+
+import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/GLTFLoader.js";
+
+import { DRACOLoader } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/DRACOLoader.js";
+
 // map set up
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
@@ -13,14 +21,6 @@ const map = new mapboxgl.Map({
     pitch: 60,
     antialias: true
 });
-
-import mapboxgl from "https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.js";
-
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.159/build/three.module.js";
-
-import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/GLTFLoader.js";
-
-import { DRACOLoader } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/DRACOLoader.js";
 
 let renderer, scene, camera;
 
