@@ -22,6 +22,8 @@ const map = new mapboxgl.Map({
     antialias: true
 });
 
+map.on("error", (e) => console.error("MAPBOX ERROR:", e.error));
+
 let renderer, scene, camera;
 
 
