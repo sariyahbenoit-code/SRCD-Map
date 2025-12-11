@@ -139,6 +139,7 @@ async function addModelsFromGeoJSON(geojson) {
                     antialias: true
                 });
                 this.renderer.autoClear = false;
+                this.renderer.setClearColor(0x000000, 0);
             },
 
             render: function (gl, matrix) {
@@ -147,7 +148,7 @@ async function addModelsFromGeoJSON(geojson) {
 
                 this.camera.projectionMatrix = m.multiply(trans);
 
-                this.renderer.state.reset();
+                this.renderer.resetState();
                 this.renderer.render(this.scene, this.camera);
                 map.triggerRepaint();
             }
