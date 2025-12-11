@@ -2,7 +2,7 @@
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA';
 
-const modelOrigin = [-122.514522, 37.967155];
+const targetCenter = [-122.514522, 37.967155];
 
 const map = new mapboxgl.Map({
     container: 'map',
@@ -16,24 +16,29 @@ const map = new mapboxgl.Map({
 
 let renderer, scene, camera;
 
-let benchModel, pondModel, closetModel;
+import {
+  GLTFLoader
+} from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/GLTFLoader.js";
 
-const loader = new THREE.GLTFLoader();
-const draco = new THREE.DRACOLoader();
+import {
+  DRACOLoader
+} from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/DRACOLoader.js";
+
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.159/build/three.module.js";
+
+const loader = new GLTFLoader();
+const draco = new DRACOLoader();
 draco.setDecoderPath(
   "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/libs/draco/"
 );
 loader.setDRACOLoader(draco);
 
-
-// rotating model, transform
-const modelAltitude = 0;
-const modelRotate = [Math.PI / 2, 0, 0];
-
-
 const benchOrigin = [-122.512606, 37.967814];
 const pondOrigin = [-122.5144361, 37.96595];
 const closetOrigin = [-122.513856, 37.967939];
+
+const modelAltitude = 0;
+const modelRotate = [Math.PI / 2, 0, 0];
 
 function makeTransform(origin) {
   const mc = mapboxgl.MercatorCoordinate.fromLngLat(origin, modelAltitude);
@@ -48,11 +53,12 @@ function makeTransform(origin) {
   };
 }
 
-
 const benchTransform = makeTransform(benchOrigin);
 const pondTransform = makeTransform(pondOrigin);
 const closetTransform = makeTransform(closetOrigin);
 
+
+let benchModel, pondModel, closetModel;
 
 async function loadModel(url, scale = 200) {
   return new Promise((resolve, reject) => {
@@ -68,6 +74,7 @@ async function loadModel(url, scale = 200) {
   });
 }
 
+
 const customLayer = {
   id: "3d-model-layer",
   type: "custom",
@@ -82,9 +89,10 @@ const customLayer = {
       context: gl,
       antialias: true,
     });
-    renderer.autoClear = false;
+    
+      renderer.autoClear = false;
 
-benchModel = await loadModel("assets/models/bench.glb");
+    benchModel = await loadModel("assets/models/bench.glb");
     pondModel = await loadModel("assets/models/pond_pack.glb");
     closetModel = await loadModel("assets/models/closet.glb");
 
@@ -118,11 +126,8 @@ function renderModel(obj, t) {
         t.translateZ
       );
 
-      const scale = new THREE.Matrix4().makeScale(
-        t.scale,
-        -t.scale,
-        t.scale
-      );
+        const scale = new THREE.Matrix4().makeScale(t.scale, -t.scale, t.scale);
+
 
       const m = new THREE.Matrix4().fromArray(matrix);
       const l = new THREE.Matrix4()
