@@ -15,7 +15,7 @@ const map = new mapboxgl.Map({
   config: { basemap: { theme: "monochrome" } },
   center: targetCenter,
   zoom: 17,
-  pitch: 60,
+  pitch: 0,
   antialias: true,
 });
 
