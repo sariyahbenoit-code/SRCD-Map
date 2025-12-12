@@ -28,7 +28,6 @@ draco.setDecoderPath(
 );
 loader.setDRACOLoader(draco);
 
-// MODEL ORIGINS
 const pondOrigin = [-122.51472840835794, 37.96556501819977];
 const benchOrigin = [-122.51255653080607, 37.96784675899259];
 const closetOrigin = [-122.5143025251341, 37.96791673783633];
@@ -139,7 +138,6 @@ const customLayer = {
   render: (gl, matrix) => {
     if (!renderer || (!pondModel && !closetModel && !benchModel)) return;
 
-    // Sync camera with Mapbox
     camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix);
 
     renderer.state.reset();
@@ -170,7 +168,7 @@ const customLayer = {
         t.translateZ
       );
 
-      const s = t.scale * 5; //increase or descrease ***!!!! SARIYAH COME BACK TO THIS
+      const s = t.scale * 5;
       const scale = new THREE.Matrix4().makeScale(s, s, s);
 
       obj.matrix = new THREE.Matrix4()
@@ -271,6 +269,7 @@ map.on("load", () => {
     const extras1 = props["Extras1"] || "";
     const extras2 = props["Extras 2"] || "";
     const popupMedia = props["PopupMedia"] || "";
+    const repoImage = props["RepoImage"] || "";
 
     const coordinates = feature.geometry.coordinates.slice();
 
@@ -307,6 +306,10 @@ map.on("load", () => {
       links.push(`<a href="${extras1}" target="_blank">Extra 1</a>`);
     if (extras2)
       links.push(`<a href="${extras2}" target="_blank">Extra 2</a>`);
+    if (repoImage)
+      links.push(
+        `<a href="${repoImage}" target="_blank">Repository image</a>`
+      );
 
     if (links.length) {
       html += "<br><br><strong>Links:</strong><br>" + links.join("<br>");
@@ -323,7 +326,7 @@ map.on("load", () => {
 
       if (isImage) {
         html +=
-          '<br><br>' +
+          "<br><br>" +
           '<a href="' + popupMedia + '" target="_blank" style="display:inline-block; width: 100%; text-align:center;">' +
           '<img src="' + popupMedia + '" alt="Popup media" ' +
           'style="display:inline-block; width: 60%; height: auto; max-width: 60%;">' +
