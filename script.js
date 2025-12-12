@@ -255,6 +255,7 @@ map.on("load", () => {
     map.getCanvas().style.cursor = "";
   });
 
+  // RESTORED ORIGINAL POPUP LOGIC + Markdown extraction
   map.on("click", "srcd-points-layer", (e) => {
     if (!e.features || !e.features.length) return;
     const feature = e.features[0];
@@ -263,10 +264,17 @@ map.on("load", () => {
     const landmark = props["Landmark"] || "Landmark";
     const address = props["Address"] || "";
     const proposal = props["Proposal"] || "";
+    const proposalLink = props["Proposal Link"] || "";
+    const existingLink = props["Existing Link"] || "";
+    const precedent1 = props["Precedent1"] || "";
+    const precedent2 = props["Precedent2"] || "";
+    const extras1 = props["Extras1"] || "";
+    const extras2 = props["Extras 2"] || "";
     let popupMedia = props["PopupMedia"] || "";
 
     const coordinates = feature.geometry.coordinates.slice();
 
+    // FLY TO LOCATION
     map.flyTo({
       center: coordinates,
       zoom: map.getZoom(),
@@ -275,51 +283,66 @@ map.on("load", () => {
       speed: 0.6
     });
 
-    let cleanUrl = "";
-    const markdownMatch = popupMedia.match(/\[.*?\]\((https?:\/\/[^\)]+)\)/i);
-    if (markdownMatch) {
-      cleanUrl = markdownMatch[1];
-    } else {
-      cleanUrl = popupMedia.trim();
-    }
-
-    if (cleanUrl.includes("github.com") && cleanUrl.includes("/blob/")) {
-      cleanUrl = cleanUrl
-        .replace("https://github.com/", "https://raw.githubusercontent.com/")
-        .replace("/blob/", "/");
-    }
-
     let html = `<strong>${landmark}</strong>`;
     if (address) html += `<br>${address}`;
     if (proposal) html += `<br><br><strong>Proposal:</strong> ${proposal}`;
 
-    if (cleanUrl) {
-      const urlLower = cleanUrl.toLowerCase();
-      const isImage = urlLower.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-      
+    // EXTRACT CLEAN URL FROM MARKDOWN [text](url)
+    let cleanMediaUrl = "";
+    const markdownMatch = popupMedia.match(/\[.*?\]\((https?:\/\/[^\)]+)\)/i);
+    if (markdownMatch) {
+      cleanMediaUrl = markdownMatch[1];
+    } else {
+      cleanMediaUrl = popupMedia.trim();
+    }
+
+    // Convert GitHub blob to raw
+    if (cleanMediaUrl.includes("github.com") && cleanMediaUrl.includes("/blob/")) {
+      cleanMediaUrl = cleanMediaUrl
+        .replace("https://github.com/", "https://raw.githubusercontent.com/")
+        .replace("/blob/", "/");
+    }
+
+    const links = [];
+    if (proposalLink) links.push(`<a href="${proposalLink}" target="_blank">Proposal image</a>`);
+    if (existingLink) links.push(`<a href="${existingLink}" target="_blank">Existing condition</a>`);
+    if (precedent1) links.push(`<a href="${precedent1}" target="_blank">Precedent 1</a>`);
+    if (precedent2) links.push(`<a href="${precedent2}" target="_blank">Precedent 2</a>`);
+    if (extras1) links.push(`<a href="${extras1}" target="_blank">Extra 1</a>`);
+    if (extras2) links.push(`<a href="${extras2}" target="_blank">Extra 2</a>`);
+
+    if (links.length) {
+      html += "<br><br><strong>Links:</strong><br>" + links.join("<br>");
+    }
+
+    // ORIGINAL IMAGE LOGIC - EXACTLY AS IT WAS WORKING
+    if (cleanMediaUrl) {
+      const lower = cleanMediaUrl.toLowerCase();
+      const isImage =
+        lower.endsWith(".jpg") ||
+        lower.endsWith(".jpeg") ||
+        lower.endsWith(".png") ||
+        lower.endsWith(".gif") ||
+        lower.endsWith(".webp");
+
       if (isImage) {
-        html += `
-          <br><br>
-          <div style="text-align:center; margin-top: 10px;">
-            <img src="${cleanUrl}" 
-                 alt="${landmark}" 
-                 style="width: 80%; height: auto; max-width: 350px; max-height: 250px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <div style="display:none; color: #666; font-size: 12px;">Image failed to load</div>
-          </div>
-          <br>
-          <a href="${cleanUrl}" target="_blank" style="font-size: 12px;">🔗 View full size</a>
-        `;
+        html +=
+          '<br><br>' +
+          '<a href="' + cleanMediaUrl + '" target="_blank" style="display:inline-block; width: 100%; text-align:center;">' +
+            '<img src="' + cleanMediaUrl + '" alt="Popup media" ' +
+            'style="display:inline-block; width: 60%; height: auto; max-width: 60%;">' +
+          '</a>';
       } else {
-        html += `<br><br><a href="${cleanUrl}" target="_blank" style="color: #0066cc;"><strong>📎 Open ${cleanUrl.split('.').pop()?.toUpperCase() || 'file'}</strong></a>`;
+        html +=
+          '<br><br><a href="' + cleanMediaUrl +
+          '" target="_blank"><strong>Open attached media</strong></a>';
       }
     }
 
     new mapboxgl.Popup({
       offset: [0, -40],
       anchor: "bottom",
-      closeOnMove: false,
-      maxWidth: "500px"
+      closeOnMove: false
     })
       .setLngLat(coordinates)
       .setHTML(html)
