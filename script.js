@@ -78,7 +78,6 @@ const imagePoints = {
         "coordinates": [-122.51426288935914, 37.96621700643947]
       }
     }
-    // Add the rest of your features here in the same pattern
   ]
 };
 
@@ -248,7 +247,6 @@ const customLayer = {
         t.translateZ
       );
 
-      // Adjust this multiplier to resize models
       const s = t.scale * 5;
       const scale = new THREE.Matrix4().makeScale(s, s, s);
 
@@ -327,7 +325,7 @@ map.on("load", () => {
     map.getCanvas().style.cursor = "";
   });
 
-
+  // Region zoom buttons
   const regionBounds = [
     [-122.5155, 37.9645], // SW
     [-122.5115, 37.9695]  // NE
@@ -353,7 +351,7 @@ map.on("load", () => {
     });
   }
 
-
+  // Checkbox toggles
   const pondCheckbox = document.getElementById("togglePond");
   const benchCheckbox = document.getElementById("toggleBench");
   const closetCheckbox = document.getElementById("toggleCloset");
@@ -375,4 +373,10 @@ map.on("load", () => {
   }
 
   if (closetCheckbox) {
-    closetCheckbox.checked = show
+    closetCheckbox.checked = showCloset;
+    closetCheckbox.addEventListener("change", (e) => {
+      showCloset = e.target.checked;
+      map.triggerRepaint();
+    });
+  }
+});
