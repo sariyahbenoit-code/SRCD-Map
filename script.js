@@ -1,9 +1,7 @@
-6// Three.js imports
 import * as THREE from "three";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/jsm/loaders/DRACOLoader.js";
 
-// Mapbox access token and map setup
 mapboxgl.accessToken =
   "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
 
@@ -23,7 +21,6 @@ map.on("error", (e) => console.error("MAPBOX ERROR:", e.error));
 
 let renderer, scene, camera;
 
-// Three.js loaders
 const loader = new GLTFLoader();
 const draco = new DRACOLoader();
 draco.setDecoderPath(
@@ -31,9 +28,8 @@ draco.setDecoderPath(
 );
 loader.setDRACOLoader(draco);
 
-// Model positions (your coordinates)
 const benchOrigin = [-122.512606, 37.967814];
-const pondOrigin  = [-122.5144361, 37.96595];
+const pondOrigin = [-122.5144361, 37.96595];
 const closetOrigin = [-122.513856, 37.967939];
 
 const modelAltitude = 0;
@@ -52,8 +48,8 @@ function makeTransform(origin) {
   };
 }
 
-const benchTransform  = makeTransform(benchOrigin);
-const pondTransform   = makeTransform(pondOrigin);
+const benchTransform = makeTransform(benchOrigin);
+const pondTransform = makeTransform(pondOrigin);
 const closetTransform = makeTransform(closetOrigin);
 
 async function loadModel(url, scale = 500) {
@@ -76,7 +72,6 @@ async function loadModel(url, scale = 500) {
 
 let benchModel, pondModel, closetModel;
 
-// Custom 3D layer
 const customLayer = {
   id: "3d-model-layer",
   type: "custom",
@@ -121,10 +116,9 @@ const customLayer = {
     }
   },
 
-    render: (gl, matrix) => {
+  render: (gl, matrix) => {
     if (!pondModel && !closetModel && !benchModel) return;
 
-    // Debug: log once
     if (!window._3dLogged) {
       console.log("benchModel:", benchModel);
       console.log("pondModel:", pondModel);
@@ -169,23 +163,18 @@ const customLayer = {
       renderer.render(scene, camera);
     }
 
-    // One model per coordinate
     renderModel(benchModel, benchTransform);
     renderModel(pondModel, pondTransform);
     renderModel(closetModel, closetTransform);
 
     map.triggerRepaint();
   },
-
-
-// Keep your existing map.on("load", ...) that calls map.addLayer(customLayer)
+}; 
 
 
 map.on("load", () => {
-  // 3D models
   map.addLayer(customLayer);
 
-  // GeoJSON points
   map.addSource("srcd-points", {
     type: "geojson",
     data: "data/619data.geojson",
@@ -203,7 +192,6 @@ map.on("load", () => {
     },
   });
 
-  // Hover cursor
   map.on("mouseenter", "srcd-points-layer", () => {
     map.getCanvas().style.cursor = "pointer";
   });
@@ -212,7 +200,6 @@ map.on("load", () => {
     map.getCanvas().style.cursor = "";
   });
 
-  // Popup on click using GeoJSON fields + PopupMedia
   map.on("click", "srcd-points-layer", (e) => {
     if (!e.features || !e.features.length) return;
     const feature = e.features[0];
@@ -261,7 +248,6 @@ map.on("load", () => {
       html += "<br><br><strong>Links:</strong><br>" + links.join("<br>");
     }
 
-    // Embedded media from PopupMedia (clickable thumbnail, min 600px)
     if (popupMedia) {
       const lower = popupMedia.toLowerCase();
       const isImage =
@@ -286,16 +272,15 @@ map.on("load", () => {
     }
 
     new mapboxgl.Popup({
-        offset: [0, -150],
-        anchor: "bottom",
-      })
+      offset: [0, -150],
+      anchor: "bottom",
+    })
       .setLngLat(coordinates)
       .setHTML(html)
       .addTo(map);
   });
 });
 
-// UI controls
 document.getElementById("zoomRegion").addEventListener("click", () => {
   map.flyTo({
     center: targetCenter,
@@ -317,9 +302,3 @@ document.getElementById("togglePond").addEventListener("change", (e) => {
 });
 
 document.getElementById("toggleBench").addEventListener("change", (e) => {
-  console.log("toggle Bench:", e.target.checked);
-});
-
-document.getElementById("toggleCloset").addEventListener("change", (e) => {
-  console.log("toggle Closet:", e.target.checked);
-});
