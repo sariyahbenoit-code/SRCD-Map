@@ -248,6 +248,15 @@ map.on("load", () => {
 
     const coordinates = feature.geometry.coordinates.slice();
 
+    // Recenter map on clicked point so popup appears near viewport center
+    map.flyTo({
+      center: coordinates,
+      zoom: map.getZoom(),
+      pitch: map.getPitch(),
+      bearing: map.getBearing(),
+      speed: 0.6,
+    });
+
     let html = `<strong>${landmark}</strong>`;
     if (address) html += `<br>${address}`;
     if (proposal) html += `<br><br><strong>Proposal:</strong> ${proposal}`;
@@ -302,8 +311,9 @@ map.on("load", () => {
     }
 
     new mapboxgl.Popup({
-      offset: [0, -150],
+      offset: [0, -200],   
       anchor: "bottom",
+      closeOnMove: false,
     })
       .setLngLat(coordinates)
       .setHTML(html)
