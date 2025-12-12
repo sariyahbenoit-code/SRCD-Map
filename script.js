@@ -31,9 +31,9 @@ draco.setDecoderPath(
 );
 loader.setDRACOLoader(draco);
 
-// Model positions
+// Model positions (your coordinates)
 const benchOrigin = [-122.512606, 37.967814];
-const pondOrigin = [-122.5144361, 37.96595];
+const pondOrigin  = [-122.5144361, 37.96595];
 const closetOrigin = [-122.513856, 37.967939];
 
 const modelAltitude = 0;
@@ -52,8 +52,8 @@ function makeTransform(origin) {
   };
 }
 
-const benchTransform = makeTransform(benchOrigin);
-const pondTransform = makeTransform(pondOrigin);
+const benchTransform  = makeTransform(benchOrigin);
+const pondTransform   = makeTransform(pondOrigin);
 const closetTransform = makeTransform(closetOrigin);
 
 async function loadModel(url, scale = 200) {
@@ -119,10 +119,9 @@ const customLayer = {
     } catch (e) {
       console.warn("Closet model not added.");
     }
-  }, // <- close onAdd here
+  },
 
   render: (gl, matrix) => {
-    // If no models loaded yet, skip rendering but do not break the map
     if (!benchModel && !pondModel && !closetModel) return;
 
     renderer.resetState();
@@ -159,10 +158,10 @@ const customLayer = {
         .multiply(translation);
 
       camera.projectionMatrix = m.multiply(l);
-
       renderer.render(scene, camera);
     }
 
+    // One model per coordinate
     renderModel(benchModel, benchTransform);
     renderModel(pondModel, pondTransform);
     renderModel(closetModel, closetTransform);
@@ -170,6 +169,9 @@ const customLayer = {
     map.triggerRepaint();
   },
 };
+
+// Keep your existing map.on("load", ...) that calls map.addLayer(customLayer)
+
 
 map.on("load", () => {
   // 3D models
