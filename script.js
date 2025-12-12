@@ -302,7 +302,7 @@ map.on("load", () => {
           '<br><br>' +
           '<a href="' + popupMedia + '" target="_blank" style="display:inline-block; width: 100%; text-align:center;">' +
             '<img src="' + popupMedia + '" alt="Popup media" ' +
-            'style="display:inline-block; width: 60%; height: auto; max-width: 60%;">' +
+            'style="display:inline-block; width: 80%; height: auto; max-width: 80%;">' +
           '</a>';
       } else {
         html +=
