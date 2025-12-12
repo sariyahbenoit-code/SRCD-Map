@@ -122,13 +122,6 @@ const customLayer = {
   render: (gl, matrix) => {
     if (!pondModel && !closetModel && !benchModel) return;
 
-    if (!window._3dLogged) {
-      console.log("benchModel:", benchModel);
-      console.log("pondModel:", pondModel);
-      console.log("closetModel:", closetModel);
-      window._3dLogged = true;
-    }
-
     renderer.resetState();
 
     function renderModel(obj, t) {
@@ -166,8 +159,8 @@ const customLayer = {
       renderer.render(scene, camera);
     }
 
-    if (showBench)  renderModel(benchModel, benchTransform);
-    if (showPond)   renderModel(pondModel, pondTransform);
+    if (showBench) renderModel(benchModel, benchTransform);
+    if (showPond) renderModel(pondModel, pondTransform);
     if (showCloset) renderModel(closetModel, closetTransform);
 
     map.triggerRepaint();
@@ -177,21 +170,56 @@ const customLayer = {
 map.on("load", () => {
   map.addLayer(customLayer);
 
-  map.addSource("srcd-points", {
+  map.addSource("srcd-data", {
     type: "geojson",
     data: "data/619data.geojson",
   });
 
   map.addLayer({
+    id: "srcd-polygon",
+    type: "fill",
+    source: "srcd-data",
+    paint: {
+      "fill-color": "#256634",
+      "fill-opacity": 0.2,
+    },
+    filter: ["==", ["geometry-type"], "Polygon"],
+  });
+
+  map.addLayer({
+    id: "srcd-polygon-outline",
+    type: "line",
+    source: "srcd-data",
+    paint: {
+      "line-color": "#354739",
+      "line-width": 2,
+    },
+    filter: ["==", ["geometry-type"], "Polygon"],
+  });
+
+  map.addLayer({
+    id: "srcd-line",
+    type: "line",
+    source: "srcd-data",
+    paint: {
+      "line-color": "#E8240C",
+      "line-width": 3,
+    },
+    filter: ["==", ["geometry-type"], "LineString"],
+  });
+
+  // Only the 3 point features as circles
+  map.addLayer({
     id: "srcd-points-layer",
     type: "circle",
-    source: "srcd-points",
+    source: "srcd-data",
     paint: {
       "circle-radius": 6,
-      "circle-color": "#e63946",
-      "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": 1.5,
+      "circle-color": "#E4E80C",
+      "circle-stroke-color": "#000000",
+      "circle-stroke-width": 1,
     },
+    filter: ["==", ["geometry-type"], "Point"],
   });
 
   map.on("mouseenter", "srcd-points-layer", () => {
