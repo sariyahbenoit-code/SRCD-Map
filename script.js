@@ -28,7 +28,6 @@ draco.setDecoderPath(
 );
 loader.setDRACOLoader(draco);
 
-// MODEL ORIGINS
 const pondOrigin = [-122.51472840835794, 37.96556501819977];
 const benchOrigin = [-122.51255653080607, 37.96784675899259];
 const closetOrigin = [-122.5143025251341, 37.96791673783633];
@@ -169,7 +168,7 @@ const customLayer = {
         t.translateZ
       );
 
-      const s = t.scale * 5;
+      const s = t.scale * 5; // adjust to change model size
       const scale = new THREE.Matrix4().makeScale(s, s, s);
 
       obj.matrix = new THREE.Matrix4()
@@ -255,7 +254,6 @@ map.on("load", () => {
     map.getCanvas().style.cursor = "";
   });
 
-  // RESTORED ORIGINAL POPUP LOGIC + Markdown extraction
   map.on("click", "srcd-points-layer", (e) => {
     if (!e.features || !e.features.length) return;
     const feature = e.features[0];
@@ -270,11 +268,11 @@ map.on("load", () => {
     const precedent2 = props["Precedent2"] || "";
     const extras1 = props["Extras1"] || "";
     const extras2 = props["Extras 2"] || "";
-    let popupMedia = props["PopupMedia"] || "";
+    const popupMedia = props["PopupMedia"] || "";
+    const repoImage = props["RepoImage"] || "";
 
     const coordinates = feature.geometry.coordinates.slice();
 
-    // FLY TO LOCATION
     map.flyTo({
       center: coordinates,
       zoom: map.getZoom(),
@@ -287,37 +285,38 @@ map.on("load", () => {
     if (address) html += `<br>${address}`;
     if (proposal) html += `<br><br><strong>Proposal:</strong> ${proposal}`;
 
-    // EXTRACT CLEAN URL FROM MARKDOWN [text](url)
-    let cleanMediaUrl = "";
-    const markdownMatch = popupMedia.match(/\[.*?\]\((https?:\/\/[^\)]+)\)/i);
-    if (markdownMatch) {
-      cleanMediaUrl = markdownMatch[1];
-    } else {
-      cleanMediaUrl = popupMedia.trim();
-    }
-
-    // Convert GitHub blob to raw
-    if (cleanMediaUrl.includes("github.com") && cleanMediaUrl.includes("/blob/")) {
-      cleanMediaUrl = cleanMediaUrl
-        .replace("https://github.com/", "https://raw.githubusercontent.com/")
-        .replace("/blob/", "/");
-    }
-
     const links = [];
-    if (proposalLink) links.push(`<a href="${proposalLink}" target="_blank">Proposal image</a>`);
-    if (existingLink) links.push(`<a href="${existingLink}" target="_blank">Existing condition</a>`);
-    if (precedent1) links.push(`<a href="${precedent1}" target="_blank">Precedent 1</a>`);
-    if (precedent2) links.push(`<a href="${precedent2}" target="_blank">Precedent 2</a>`);
-    if (extras1) links.push(`<a href="${extras1}" target="_blank">Extra 1</a>`);
-    if (extras2) links.push(`<a href="${extras2}" target="_blank">Extra 2</a>`);
+    if (proposalLink)
+      links.push(
+        `<a href="${proposalLink}" target="_blank">Proposal image</a>`
+      );
+    if (existingLink)
+      links.push(
+        `<a href="${existingLink}" target="_blank">Existing condition</a>`
+      );
+    if (precedent1)
+      links.push(
+        `<a href="${precedent1}" target="_blank">Precedent 1</a>`
+      );
+    if (precedent2)
+      links.push(
+        `<a href="${precedent2}" target="_blank">Precedent 2</a>`
+      );
+    if (extras1)
+      links.push(`<a href="${extras1}" target="_blank">Extra 1</a>`);
+    if (extras2)
+      links.push(`<a href="${extras2}" target="_blank">Extra 2</a>`);
+    if (repoImage)
+      links.push(
+        `<a href="${repoImage}" target="_blank">Repository image</a>`
+      );
 
     if (links.length) {
       html += "<br><br><strong>Links:</strong><br>" + links.join("<br>");
     }
 
-    // ORIGINAL IMAGE LOGIC - EXACTLY AS IT WAS WORKING
-    if (cleanMediaUrl) {
-      const lower = cleanMediaUrl.toLowerCase();
+    if (popupMedia) {
+      const lower = popupMedia.toLowerCase();
       const isImage =
         lower.endsWith(".jpg") ||
         lower.endsWith(".jpeg") ||
@@ -327,14 +326,15 @@ map.on("load", () => {
 
       if (isImage) {
         html +=
-          '<br><br>' +
-          '<a href="' + cleanMediaUrl + '" target="_blank" style="display:inline-block; width: 100%; text-align:center;">' +
-            '<img src="' + cleanMediaUrl + '" alt="Popup media" ' +
-            'style="display:inline-block; width: 60%; height: auto; max-width: 60%;">' +
-          '</a>';
+          "<br><br>" +
+          '<a href="' + popupMedia + '" target="_blank" style="display:inline-block; width: 100%; text-align:center;">' +
+          '<img src="' + popupMedia + '" alt="Popup media" ' +
+          'style="display:inline-block; width: 60%; height: auto; max-width: 60%;">' +
+          "</a>";
       } else {
         html +=
-          '<br><br><a href="' + cleanMediaUrl +
+          '<br><br><a href="' +
+          popupMedia +
           '" target="_blank"><strong>Open attached media</strong></a>';
       }
     }
