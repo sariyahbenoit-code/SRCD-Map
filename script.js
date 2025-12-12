@@ -28,6 +28,7 @@ draco.setDecoderPath(
 );
 loader.setDRACOLoader(draco);
 
+// MODEL ORIGINS (must match your key points)
 const pondOrigin = [-122.51472840835794, 37.96556501819977];
 const benchOrigin = [-122.51255653080607, 37.96784675899259];
 const closetOrigin = [-122.5143025251341, 37.96791673783633];
@@ -233,6 +234,7 @@ map.on("load", () => {
     filter: ["==", ["geometry-type"], "LineString"]
   });
 
+  // Shows only features whose geometry.type === "Point"
   map.addLayer({
     id: "srcd-points-layer",
     type: "circle",
@@ -268,7 +270,7 @@ map.on("load", () => {
     const precedent2 = props["Precedent2"] || "";
     const extras1 = props["Extras1"] || "";
     const extras2 = props["Extras 2"] || "";
-    const popupMedia = props["PopupMedia"] || "";
+    let popupMedia = props["PopupMedia"] || "";
     const repoImage = props["RepoImage"] || "";
 
     const coordinates = feature.geometry.coordinates.slice();
@@ -315,8 +317,17 @@ map.on("load", () => {
       html += "<br><br><strong>Links:</strong><br>" + links.join("<br>");
     }
 
+    // Normalize PopupMedia: if it looks like a GitHub blob URL, convert to raw
+    if (popupMedia.includes("github.com") && popupMedia.includes("/blob/")) {
+      popupMedia = popupMedia
+        .replace("https://github.com/", "https://raw.githubusercontent.com/")
+        .replace("/blob/", "/");
+    }
+
     if (popupMedia) {
-      const lower = popupMedia.toLowerCase();
+      const url = popupMedia.split("?")[0].split("#")[0];
+      const lower = url.toLowerCase();
+
       const isImage =
         lower.endsWith(".jpg") ||
         lower.endsWith(".jpeg") ||
@@ -358,28 +369,4 @@ document.getElementById("zoomRegion").addEventListener("click", () => {
   });
 });
 
-document.getElementById("resetView").addEventListener("click", () => {
-  map.flyTo({
-    center: targetCenter,
-    zoom: 16,
-    speed: 0.6
-  });
-});
-
-document.getElementById("togglePond").addEventListener("change", (e) => {
-  showPond = e.target.checked;
-  console.log("togglePond:", e.target.checked);
-  map.triggerRepaint();
-});
-
-document.getElementById("toggleBench").addEventListener("change", (e) => {
-  showBench = e.target.checked;
-  console.log("toggle Bench:", e.target.checked);
-  map.triggerRepaint();
-});
-
-document.getElementById("toggleCloset").addEventListener("change", (e) => {
-  showCloset = e.target.checked;
-  console.log("toggle Closet:", e.target.checked);
-  map.triggerRepaint();
-});
+document.getElementById("resetView").addEvent
