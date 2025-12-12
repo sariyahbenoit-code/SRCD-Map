@@ -28,9 +28,16 @@ draco.setDecoderPath(
 );
 loader.setDRACOLoader(draco);
 
-const benchOrigin = [-122.512606, 37.967814];
-const pondOrigin = [-122.5144361, 37.96595];
-const closetOrigin = [-122.513856, 37.967939];
+// USE THE GEOJSON POINT COORDINATES AS MODEL ORIGINS
+
+// pond pack at [-122.51472840835794, 37.96556501819977]
+const pondOrigin = [-122.51472840835794, 37.96556501819977];
+
+// bench at [-122.51255653080607, 37.96784675899259]
+const benchOrigin = [-122.51255653080607, 37.96784675899259];
+
+// closet at [-122.5143025251341, 37.96791673783633]
+const closetOrigin = [-122.5143025251341, 37.96791673783633];
 
 const modelAltitude = 0;
 const modelRotate = [Math.PI / 2, 0, 0];
@@ -146,7 +153,7 @@ const customLayer = {
         t.translateZ
       );
 
-      // BOOST SCALE HERE (×50 for visibility; tune as needed)
+      // Boost scale so models are visible; tune 50 up/down as needed
       const s = t.scale * 50;
       const scale = new THREE.Matrix4().makeScale(s, -s, s);
 
@@ -211,6 +218,7 @@ map.on("load", () => {
     filter: ["==", ["geometry-type"], "LineString"],
   });
 
+  // Only the 3 point features as circles
   map.addLayer({
     id: "srcd-points-layer",
     type: "circle",
@@ -250,6 +258,7 @@ map.on("load", () => {
 
     const coordinates = feature.geometry.coordinates.slice();
 
+    // Recenter map on clicked point
     map.flyTo({
       center: coordinates,
       zoom: map.getZoom(),
@@ -302,7 +311,7 @@ map.on("load", () => {
           '<br><br>' +
           '<a href="' + popupMedia + '" target="_blank" style="display:inline-block; width: 100%; text-align:center;">' +
             '<img src="' + popupMedia + '" alt="Popup media" ' +
-            'style="display:inline-block; width: 80%; height: auto; max-width: 80%;">' +
+            'style="display:inline-block; width: 60%; height: auto; max-width: 60%;">' +
           '</a>';
       } else {
         html +=
