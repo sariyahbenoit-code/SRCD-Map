@@ -122,7 +122,19 @@ const customLayer = {
   },
 
   render: (gl, matrix) => {
-    if (!benchModel && !pondModel && !closetModel) return;
+  if (!pondModel && !closetModel && !benchModel) return;
+
+  // Debug: log once
+  if (!window._3dLogged) {
+    console.log("benchModel:", benchModel);
+    console.log("pondModel:", pondModel);
+    console.log("closetModel:", closetModel);
+    window._3dLogged = true;
+  }
+
+  renderer.resetState();
+  // ... rest of renderModel and calls ...
+}
 
     renderer.resetState();
 
