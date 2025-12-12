@@ -302,3 +302,9 @@ document.getElementById("togglePond").addEventListener("change", (e) => {
 });
 
 document.getElementById("toggleBench").addEventListener("change", (e) => {
+  console.log("toggle Bench:", e.target.checked);
+});
+
+document.getElementById("toggleCloset").addEventListener("change", (e) => {
+  console.log("toggle Closet:", e.target.checked);
+});
