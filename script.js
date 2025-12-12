@@ -56,7 +56,7 @@ const benchTransform  = makeTransform(benchOrigin);
 const pondTransform   = makeTransform(pondOrigin);
 const closetTransform = makeTransform(closetOrigin);
 
-async function loadModel(url, scale = 200) {
+async function loadModel(url, scale = 500) {
   return new Promise((resolve, reject) => {
     loader.load(
       url,
