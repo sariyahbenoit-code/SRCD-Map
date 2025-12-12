@@ -71,6 +71,9 @@ async function loadModel(url, scale = 500) {
 }
 
 let benchModel, pondModel, closetModel;
+let showBench = true;
+let showPond = true;
+let showCloset = true;
 
 const customLayer = {
   id: "3d-model-layer",
@@ -163,14 +166,13 @@ const customLayer = {
       renderer.render(scene, camera);
     }
 
-    renderModel(benchModel, benchTransform);
-    renderModel(pondModel, pondTransform);
-    renderModel(closetModel, closetTransform);
+    if (showBench)  renderModel(benchModel, benchTransform);
+    if (showPond)   renderModel(pondModel, pondTransform);
+    if (showCloset) renderModel(closetModel, closetTransform);
 
     map.triggerRepaint();
   },
-}; 
-
+};
 
 map.on("load", () => {
   map.addLayer(customLayer);
@@ -298,13 +300,19 @@ document.getElementById("resetView").addEventListener("click", () => {
 });
 
 document.getElementById("togglePond").addEventListener("change", (e) => {
+  showPond = e.target.checked;
   console.log("togglePond:", e.target.checked);
+  map.triggerRepaint();
 });
 
 document.getElementById("toggleBench").addEventListener("change", (e) => {
+  showBench = e.target.checked;
   console.log("toggle Bench:", e.target.checked);
+  map.triggerRepaint();
 });
 
 document.getElementById("toggleCloset").addEventListener("change", (e) => {
+  showCloset = e.target.checked;
   console.log("toggle Closet:", e.target.checked);
+  map.triggerRepaint();
 });
