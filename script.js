@@ -112,7 +112,7 @@ loader.setDRACOLoader(draco);
 // Model origins matching your landmarks (lng, lat) - lifted above polygon
 const benchOrigin = [-122.5127367747097, 37.96788480707045];   // Corner park overview
 const closetOrigin = [-122.51403244782145, 37.96782576318992]; // Building entrance  
-const pondOrigin = [-122.51460483446996, 37.96568378935048];   // Fisheye perspective of forebay
+const pondOrigin   = [-122.51460483446996, 37.96568378935048]; // Fisheye perspective of forebay
 
 const modelAltitude = 50;   // Lift models above polygon surface
 const modelRotate = [Math.PI / 2, 0, 0];
@@ -130,8 +130,8 @@ function makeTransform(origin) {
   };
 }
 
-const benchTransform = makeTransform(benchOrigin);
-const pondTransform = makeTransform(pondOrigin);
+const benchTransform  = makeTransform(benchOrigin);
+const pondTransform   = makeTransform(pondOrigin);
 const closetTransform = makeTransform(closetOrigin);
 
 // Load a GLB model
@@ -261,12 +261,12 @@ const customLayer = {
         .multiply(translation);
     }
 
-    applyTransform(benchModel, benchTransform, 50);
-    applyTransform(pondModel, pondTransform, 50);
+    applyTransform(benchModel,  benchTransform,  50);
+    applyTransform(pondModel,   pondTransform,   50);
     applyTransform(closetModel, closetTransform, 50);
     
-    if (benchModel) benchModel.visible = showBench;
-    if (pondModel) pondModel.visible = showPond;
+    if (benchModel)  benchModel.visible  = showBench;
+    if (pondModel)   pondModel.visible   = showPond;
     if (closetModel) closetModel.visible = showCloset;
 
     renderer.render(scene, camera);
@@ -278,6 +278,38 @@ const customLayer = {
 map.on("load", () => {
   // 1. Add your 3D models layer
   map.addLayer(customLayer);
+
+  // OPTIONAL: Mapbox vector 3D buildings from the 'building' layer of the composite source [web:131]
+  const layers = map.getStyle().layers;
+  const labelLayerId = layers.find(
+    (layer) => layer.type === "symbol" && layer.layout && layer.layout["text-field"]
+  )?.id;
+
+  if (labelLayerId) {
+    map.addLayer(
+      {
+        id: "add-3d-buildings",
+        source: "composite",
+        "source-layer": "building",
+        filter: ["==", "extrude", "true"],
+        type: "fill-extrusion",
+        minzoom: 15,
+        paint: {
+          "fill-extrusion-color": "#aaa",
+          "fill-extrusion-height": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            15, 0,
+            15.05, ["get", "height"]
+          ],
+          "fill-extrusion-base": ["get", "min_height"],
+          "fill-extrusion-opacity": 0.6
+        }
+      },
+      labelLayerId
+    );
+  }
 
   // 2. Add your full 619data.geojson as a source
   map.addSource("srcd-geometry", {
@@ -344,9 +376,9 @@ map.on("load", () => {
     const feature = e.features && e.features[0];
     if (!feature) return;
 
-    const coords = feature.geometry.coordinates.slice();
-    const title = feature.properties.Landmark || "";
-    const imgUrl = feature.properties.PopupMedia || "";
+    const coords    = feature.geometry.coordinates.slice();
+    const title     = feature.properties.Landmark || "";
+    const imgUrl    = feature.properties.PopupMedia || "";
     const beforeUrl = feature.properties.BeforeMedia || "";
 
     let html = `<div style="max-width:700px;">`;
@@ -393,7 +425,7 @@ map.on("load", () => {
   ];
 
   const zoomRegionBtn = document.getElementById("zoomRegion");
-  const resetViewBtn = document.getElementById("resetView");
+  const resetViewBtn  = document.getElementById("resetView");
 
   if (zoomRegionBtn) {
     zoomRegionBtn.addEventListener("click", () => {
@@ -413,8 +445,8 @@ map.on("load", () => {
   }
 
   // 9. Checkbox toggles
-  const pondCheckbox = document.getElementById("togglePond");
-  const benchCheckbox = document.getElementById("toggleBench");
+  const pondCheckbox   = document.getElementById("togglePond");
+  const benchCheckbox  = document.getElementById("toggleBench");
   const closetCheckbox = document.getElementById("toggleCloset");
 
   if (pondCheckbox) {
