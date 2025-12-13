@@ -5,10 +5,8 @@ import { DRACOLoader } from "https://cdn.jsdelivr.net/npm/three@0.159/examples/j
 mapboxgl.accessToken =
   "pk.eyJ1Ijoic25iZW5vaSIsImEiOiJjbWg5Y2IweTAwbnRzMm5xMXZrNnFnbmY5In0.Lza9yPTlMhbHE5zHNRb1aA";
 
-// Center of your SRCD area
 const targetCenter = [-122.514522, 37.967155];
 
-// Your image points GeoJSON
 const imagePoints = {
   "type": "FeatureCollection",
   "features": [
@@ -74,7 +72,6 @@ const imagePoints = {
         "PopupMedia": "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/assets/images/floating%20housing.png"
       },
       "geometry": {
-        // UPDATED: floating housing coordinates aligned with GeoJSON
         "type": "Point",
         "coordinates": [-122.5143025251341, 37.96791673783633]
       }
@@ -82,7 +79,6 @@ const imagePoints = {
   ]
 };
 
-// Create the map with light style (monochrome compatible)
 const map = new mapboxgl.Map({
   container: "map",
   style: "mapbox://styles/mapbox/light-v11",
@@ -95,10 +91,8 @@ const map = new mapboxgl.Map({
 
 map.on("error", (e) => console.error("MAPBOX ERROR:", e.error));
 
-// THREE.js globals
 let renderer, scene, camera;
 
-// Loaders
 const loader = new GLTFLoader();
 const draco = new DRACOLoader();
 draco.setDecoderPath(
@@ -106,12 +100,11 @@ draco.setDecoderPath(
 );
 loader.setDRACOLoader(draco);
 
-// Model origins matching your landmarks (lng, lat) - lifted above polygon
 const benchOrigin = [-122.5127367747097, 37.96788480707045];   // Corner park overview
 const closetOrigin = [-122.51403244782145, 37.96782576318992]; // Building entrance  
 const pondOrigin = [-122.51460483446996, 37.96568378935048];   // Fisheye perspective of forebay
 
-const modelAltitude = 50;   // Lift models above polygon surface
+const modelAltitude = 50;   
 const modelRotate = [Math.PI / 2, 0, 0];
 
 function makeTransform(origin) {
@@ -131,7 +124,6 @@ const benchTransform = makeTransform(benchOrigin);
 const pondTransform = makeTransform(pondOrigin);
 const closetTransform = makeTransform(closetOrigin);
 
-// Load a GLB model
 async function loadModel(url, scale = 1) {
   return new Promise((resolve, reject) => {
     loader.load(
@@ -160,7 +152,6 @@ let showBench = true;
 let showPond = true;
 let showCloset = true;
 
-// Custom 3D layer - FIXED: removed renderer.clearDepth()
 const customLayer = {
   id: "3d-model-layer",
   type: "custom",
@@ -271,18 +262,14 @@ const customLayer = {
   }
 };
 
-// Load everything once basemap is ready
 map.on("load", () => {
-  // 1. Add your 3D models layer
   map.addLayer(customLayer);
 
-  // 2. Add your full 619data.geojson as a source
   map.addSource("srcd-geometry", {
     type: "geojson",
     data: "https://raw.githubusercontent.com/sariyahbenoit-code/SRCD-Map/main/data/619data.geojson"
   });
 
-  // 3. Big polygon (use your GeoJSON color: #256634, outline #354739)
   map.addLayer({
     id: "srcd-polygon-fill",
     type: "fill",
@@ -305,7 +292,6 @@ map.on("load", () => {
     }
   });
 
-  // 4. LineString (use your GeoJSON red: #E8240C)
   map.addLayer({
     id: "srcd-line",
     type: "line",
@@ -317,13 +303,11 @@ map.on("load", () => {
     }
   });
 
-  // 5. Add your imagePoints as a source
   map.addSource("image-points", {
     type: "geojson",
     data: imagePoints
   });
 
-  // 6. Add a circle layer for the points *AFTER* polygons (on top)
   map.addLayer({
     id: "image-points-layer",
     type: "circle",
@@ -336,7 +320,6 @@ map.on("load", () => {
     }
   });
 
-  // 7. Popups for image points
   map.on("click", "image-points-layer", (e) => {
     const feature = e.features && e.features[0];
     if (!feature) return;
@@ -366,7 +349,6 @@ map.on("load", () => {
     map.getCanvas().style.cursor = "";
   });
 
-  // 8. Region zoom buttons
   const regionBounds = [
     [-122.5155, 37.9645], // SW
     [-122.5115, 37.9695]  // NE
@@ -392,7 +374,6 @@ map.on("load", () => {
     });
   }
 
-  // 9. Checkbox toggles
   const pondCheckbox = document.getElementById("togglePond");
   const benchCheckbox = document.getElementById("toggleBench");
   const closetCheckbox = document.getElementById("toggleCloset");
