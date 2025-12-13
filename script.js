@@ -110,7 +110,7 @@ const benchOrigin = [-122.5127367747097, 37.96788480707045];   // Corner park ov
 const closetOrigin = [-122.51403244782145, 37.96782576318992]; // Building entrance  
 const pondOrigin = [-122.51460483446996, 37.96568378935048];   // Fisheye perspective of forebay
 
-const modelAltitude = 5;  // Lift models above polygon surface
+const modelAltitude = 50;   // Lift models above polygon surface
 const modelRotate = [Math.PI / 2, 0, 0];
 
 function makeTransform(origin) {
@@ -258,10 +258,10 @@ const customLayer = {
         .multiply(translation);
     }
 
-    applyTransform(benchModel, benchTransform, 5);    // Corner park
-    applyTransform(pondModel, pondTransform, 5);      // Forebay pond
-    applyTransform(closetModel, closetTransform, 5);  // Building entrance
-
+    applyTransform(benchModel, benchTransform, 50);    // Corner park - 10x bigger
+    applyTransform(pondModel, pondTransform, 50);      // Forebay pond
+    applyTransform(closetModel, closetTransform, 50); 
+    
     if (benchModel) benchModel.visible = showBench;
     if (pondModel) pondModel.visible = showPond;
     if (closetModel) closetModel.visible = showCloset;
